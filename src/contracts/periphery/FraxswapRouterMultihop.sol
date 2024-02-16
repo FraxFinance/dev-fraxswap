@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BUSL-1.1
-pragma solidity ^0.8.0;
+pragma solidity >=0.8.0;
 pragma abicoder v2;
 
 // ====================================================================
@@ -12,7 +12,6 @@ pragma abicoder v2;
 // ====================================================================
 // ===================== Fraxswap Router Multihop =====================
 // ====================================================================
-// Fraxswap Router Multihop
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -32,10 +31,12 @@ contract FraxswapRouterMultihop is ReentrancyGuard {
 
     IWETH public immutable WETH9;
     address public immutable FRAX;
+    bool public immutable CHECK_AMOUNTOUT_IN_ROUTER;
 
-    constructor(IWETH _WETH9, address _FRAX) {
+    constructor(IWETH _WETH9, address _FRAX, bool _CHECK_AMOUNTOUT_IN_ROUTER) {
         WETH9 = _WETH9;
         FRAX = _FRAX;
+        CHECK_AMOUNTOUT_IN_ROUTER = _CHECK_AMOUNTOUT_IN_ROUTER;
     }
 
     /// @notice modifier for checking deadline
@@ -44,10 +45,8 @@ contract FraxswapRouterMultihop is ReentrancyGuard {
         _;
     }
 
-    /// @notice only accept ETH via fallback from the WETH contract
-    receive() external payable {
-        assert(msg.sender == address(WETH9));
-    }
+    /// @notice accept ETH
+    receive() external payable {}
 
     /// ---------------------------
     /// --------- Public ----------
@@ -59,10 +58,21 @@ contract FraxswapRouterMultihop is ReentrancyGuard {
     function swap(
         FraxswapParams memory params
     ) external payable nonReentrant checkDeadline(params.deadline) returns (uint256 amountOut) {
+        if (params.recipient == address(0)) params.recipient = msg.sender;
+        FraxswapRoute memory route = abi.decode(params.route, (FraxswapRoute));
+        route.tokenOut = params.tokenIn;
+        route.amountOut = params.amountIn;
+        FraxswapRoute memory firstRoute = abi.decode(route.nextHops[0], (FraxswapRoute));
+
         if (params.tokenIn == address(0)) {
             // ETH sent in via msg.value
             require(msg.value == params.amountIn, "FSR:II"); // Insufficient input ETH
+        } else if (params.tokenIn == address(WETH9) && msg.value > 0) {
+            // ETH sent in via msg.value
+            require(msg.value == params.amountIn, "FSR:II"); // Insufficient input ETH
+            WETH9.deposit{ value: msg.value }();
         } else {
+            require(msg.value == 0, "FSR:IE"); // ETH transfer that is not used, prevent mistakes
             if (params.v != 0) {
                 // use permit instead of approval
                 uint256 amount = params.approveMax ? type(uint256).max : params.amountIn;
@@ -76,33 +86,46 @@ contract FraxswapRouterMultihop is ReentrancyGuard {
                     params.s
                 );
             }
+            address targetPool = address(this);
+            if (firstRoute.steps.length > 0) {
+                FraxswapStepData memory step = abi.decode(firstRoute.steps[0], (FraxswapStepData));
+                if (step.directFundThisPool == 1) targetPool = step.pool;
+            }
             // Pull tokens into the Router Contract
-            TransferHelper.safeTransferFrom(params.tokenIn, msg.sender, address(this), params.amountIn);
+            TransferHelper.safeTransferFrom(params.tokenIn, msg.sender, targetPool, params.amountIn);
         }
-
-        FraxswapRoute memory route = abi.decode(params.route, (FraxswapRoute));
-        route.tokenOut = params.tokenIn;
-        route.amountOut = params.amountIn;
-
-        for (uint256 i; i < route.nextHops.length; ++i) {
-            FraxswapRoute memory nextRoute = abi.decode(route.nextHops[i], (FraxswapRoute));
-            executeAllHops(route, nextRoute);
-        }
-
         bool outputETH = params.tokenOut == address(0); // save gas
+        uint256 initialBalance;
+        if (!CHECK_AMOUNTOUT_IN_ROUTER)
+            initialBalance = outputETH ? params.recipient.balance : IERC20(params.tokenOut).balanceOf(params.recipient);
+        for (uint256 i; i < route.nextHops.length; ++i) {
+            FraxswapRoute memory nextRoute = i == 0 ? firstRoute : abi.decode(route.nextHops[i], (FraxswapRoute));
+            executeAllHops(route, nextRoute, params.recipient);
+        }
 
         amountOut = outputETH ? address(this).balance : IERC20(params.tokenOut).balanceOf(address(this));
 
-        // Check output amounts and send to recipient (IMPORTANT CHECK)
-        require(amountOut >= params.amountOutMinimum, "FSR:IO"); // Insufficient output
-
-        if (outputETH) {
-            // sending ETH
-            (bool success, ) = payable(params.recipient).call{ value: amountOut }("");
-            require(success, "FSR:Invalid transfer");
-        } else {
-            TransferHelper.safeTransfer(params.tokenOut, params.recipient, amountOut);
+        if (outputETH && amountOut == 0) {
+            amountOut = IERC20(address(WETH9)).balanceOf(address(this));
+            if (amountOut > 0) WETH9.withdraw(amountOut);
         }
+
+        if (amountOut > 0) {
+            if (outputETH) {
+                // sending ETH
+                (bool success, ) = payable(params.recipient).call{ value: amountOut }("");
+                require(success, "FSR:Invalid transfer");
+            } else {
+                TransferHelper.safeTransfer(params.tokenOut, params.recipient, amountOut);
+            }
+        }
+        if (!CHECK_AMOUNTOUT_IN_ROUTER)
+            amountOut = outputETH
+                ? params.recipient.balance
+                : IERC20(params.tokenOut).balanceOf(params.recipient) - initialBalance;
+
+        // Check output amounts (IMPORTANT CHECK)
+        require(amountOut >= params.amountOutMinimum, "FSR:IO"); // Insufficient output
 
         emit Routed(params.tokenIn, params.tokenOut, params.amountIn, amountOut);
     }
@@ -133,12 +156,13 @@ contract FraxswapRouterMultihop is ReentrancyGuard {
     function executeSwap(
         FraxswapRoute memory prevRoute,
         FraxswapRoute memory route,
-        FraxswapStepData memory step
+        FraxswapStepData memory step,
+        address recipient
     ) internal returns (uint256 amountOut) {
         uint256 amountIn = getAmountForPct(step.percentOfHop, route.percentOfHop, prevRoute.amountOut);
         if (step.swapType < 2) {
             // Fraxswap/Uni v2
-            bool zeroForOne = prevRoute.tokenOut < step.tokenOut;
+            bool zeroForOne = (step.extraParam2 == 0 && prevRoute.tokenOut < step.tokenOut) || step.extraParam2 == 1;
             if (step.swapType == 0) {
                 // Execute virtual orders for Fraxswap
                 PoolInterface(step.pool).executeVirtualOrders(block.timestamp);
@@ -158,20 +182,21 @@ contract FraxswapRouterMultihop is ReentrancyGuard {
             IUniswapV2Pair(step.pool).swap(
                 zeroForOne ? 0 : amountOut,
                 zeroForOne ? amountOut : 0,
-                step.directFundNextPool == 1 ? getNextDirectFundingPool(route) : address(this),
+                step.directFundNextPool == 1 ? getNextDirectFundingPool(route, recipient) : address(this),
                 new bytes(0)
             );
         } else if (step.swapType == 2) {
             // Uni v3
-            bool zeroForOne = prevRoute.tokenOut < step.tokenOut;
+            bool zeroForOne = (step.extraParam2 == 0 && prevRoute.tokenOut < step.tokenOut) || step.extraParam2 == 1;
+            bytes memory callBackData = abi.encode(
+                SwapCallbackData({ tokenIn: prevRoute.tokenOut, directFundThisPool: step.directFundThisPool == 1 })
+            );
             (int256 amount0, int256 amount1) = IUniswapV3Pool(step.pool).swap(
-                step.directFundNextPool == 1 ? getNextDirectFundingPool(route) : address(this),
+                step.directFundNextPool == 1 ? getNextDirectFundingPool(route, recipient) : address(this),
                 zeroForOne,
                 amountIn.toInt256(),
                 zeroForOne ? 4_295_128_740 : 1_461_446_703_485_210_103_287_273_052_203_988_822_378_723_970_341, // Do not fail because of price
-                abi.encode(
-                    SwapCallbackData({ tokenIn: prevRoute.tokenOut, directFundThisPool: step.directFundThisPool == 1 })
-                )
+                callBackData
             );
             amountOut = uint256(zeroForOne ? -amount1 : -amount0);
         } else if (step.swapType == 3) {
@@ -180,25 +205,14 @@ contract FraxswapRouterMultihop is ReentrancyGuard {
             PoolInterface(step.pool).exchange(step.extraParam1, step.extraParam2, amountIn, 0);
             amountOut = IERC20(step.tokenOut).balanceOf(address(this));
         } else if (step.swapType == 4) {
-            // Curve exchange, with returns
-            uint256 value = 0;
-            if (prevRoute.tokenOut == address(WETH9)) {
-                // WETH send as ETH
-                WETH9.withdraw(amountIn);
-                value = amountIn;
-            } else {
-                TransferHelper.safeApprove(prevRoute.tokenOut, step.pool, amountIn);
-            }
-            amountOut = PoolInterface(step.pool).exchange{ value: value }(
+            // Curve exchange, with returns (no ETH)
+            TransferHelper.safeApprove(prevRoute.tokenOut, step.pool, amountIn);
+            amountOut = PoolInterface(step.pool).exchange(
                 int128(int256(step.extraParam1)),
                 int128(int256(step.extraParam2)),
                 amountIn,
                 0
             );
-            if (route.tokenOut == address(WETH9)) {
-                // Wrap the received ETH as WETH
-                WETH9.deposit{ value: amountOut }();
-            }
         } else if (step.swapType == 5) {
             // Curve exchange_underlying
             TransferHelper.safeApprove(prevRoute.tokenOut, step.pool, amountIn);
@@ -227,9 +241,12 @@ contract FraxswapRouterMultihop is ReentrancyGuard {
                 amountOut = PoolInterface(step.pool).redeemFPI(amountIn, 0);
             }
         } else if (step.swapType == 8) {
-            // Fraxlend
+            // ERC4626/Fraxlend deposit
             TransferHelper.safeApprove(prevRoute.tokenOut, step.pool, amountIn);
-            amountOut = PoolInterface(step.pool).deposit(amountIn, address(this));
+            amountOut = PoolInterface(step.pool).deposit(
+                amountIn,
+                step.directFundNextPool == 1 ? getNextDirectFundingPool(route, recipient) : address(this)
+            );
         } else if (step.swapType == 9) {
             // FrxETHMinter
             if (step.extraParam1 == 0 && prevRoute.tokenOut == address(WETH9)) {
@@ -237,7 +254,7 @@ contract FraxswapRouterMultihop is ReentrancyGuard {
                 WETH9.withdraw(amountIn);
             }
             PoolInterface(step.pool).submitAndGive{ value: amountIn }(
-                step.directFundNextPool == 1 ? getNextDirectFundingPool(route) : address(this)
+                step.directFundNextPool == 1 ? getNextDirectFundingPool(route, recipient) : address(this)
             );
             amountOut = amountIn; // exchange 1 for 1
         } else if (step.swapType == 10) {
@@ -250,41 +267,105 @@ contract FraxswapRouterMultihop is ReentrancyGuard {
                 WETH9.deposit{ value: amountIn }();
             }
             amountOut = amountIn; // exchange 1 for 1
-        } else if (step.swapType == 999) {
-            // Generic Pool
+        } else if (step.swapType == 11) {
+            // Curve exchange, with returns and ETH
+            uint256 value = 0;
+            if (prevRoute.tokenOut == address(WETH9)) {
+                // WETH send as ETH
+                WETH9.withdraw(amountIn);
+                value = amountIn;
+            } else if (prevRoute.tokenOut == address(0)) {
+                value = amountIn;
+            } else {
+                TransferHelper.safeApprove(prevRoute.tokenOut, step.pool, amountIn);
+            }
+            amountOut = PoolInterface(step.pool).exchange{ value: value }(
+                int128(int256(step.extraParam1)),
+                int128(int256(step.extraParam2)),
+                amountIn,
+                0
+            );
+            if (route.tokenOut == address(WETH9)) {
+                // Wrap the received ETH as WETH
+                WETH9.deposit{ value: amountOut }();
+            }
+        } else if (step.swapType == 12) {
+            // Curve exchange_received (NG)
             if (step.directFundThisPool == 0) {
                 // this pool is funded by router
                 TransferHelper.safeTransfer(prevRoute.tokenOut, step.pool, amountIn);
             }
-            amountOut = PoolInterface(step.pool).swap(
-                prevRoute.tokenOut,
-                route.tokenOut,
+            amountOut = PoolInterface(step.pool).exchange_received(
+                int128(int256(step.extraParam1)),
+                int128(int256(step.extraParam2)),
                 amountIn,
-                step.directFundNextPool == 1 ? getNextDirectFundingPool(route) : address(this)
+                0,
+                step.directFundNextPool == 1 ? getNextDirectFundingPool(route, recipient) : address(this)
             );
+        } else if (step.swapType == 13) {
+            // Redeem ERC4626
+            amountOut = PoolInterface(step.pool).redeem(
+                amountIn,
+                step.directFundNextPool == 1 ? getNextDirectFundingPool(route, recipient) : address(this),
+                address(this)
+            );
+        } else if (step.swapType == 14) {
+            // Curve exchange, with returns + receiver (no ETH)
+            TransferHelper.safeApprove(prevRoute.tokenOut, step.pool, amountIn);
+            amountOut = PoolInterface(step.pool).exchange(
+                int128(int256(step.extraParam1)),
+                int128(int256(step.extraParam2)),
+                amountIn,
+                0,
+                step.directFundNextPool == 1 ? getNextDirectFundingPool(route, recipient) : address(this)
+            );
+        } else if (step.swapType == 255) {
+            // Delegatecall
+            bytes4 signature = bytes4(uint32(step.extraParam1));
+            (bool success, bytes memory data) = address(address(uint160(step.extraParam1 >> 32))).delegatecall(
+                abi.encodeWithSelector(
+                    signature,
+                    prevRoute.tokenOut,
+                    step.tokenOut,
+                    amountIn,
+                    step.pool,
+                    step.directFundThisPool,
+                    step.directFundNextPool == 1 ? getNextDirectFundingPool(route, recipient) : address(this),
+                    step.extraParam2
+                )
+            );
+            require(success, "FSR:Delecatecall failed");
+            amountOut = abi.decode(data, (uint256));
         }
-
-        emit Swapped(step.pool, prevRoute.tokenOut, step.tokenOut, amountIn, amountOut);
     }
 
     /// @notice Function that will loop through and execute swap steps
     /// @param prevRoute previous hop of the route
     /// @param route current hop of the route
-    function executeAllStepsForRoute(FraxswapRoute memory prevRoute, FraxswapRoute memory route) internal {
+    function executeAllStepsForRoute(
+        FraxswapRoute memory prevRoute,
+        FraxswapRoute memory route,
+        address recipient
+    ) internal {
         for (uint256 j; j < route.steps.length; ++j) {
             FraxswapStepData memory step = abi.decode(route.steps[j], (FraxswapStepData));
-            route.amountOut += executeSwap(prevRoute, route, step);
+            route.amountOut += executeSwap(
+                prevRoute,
+                route,
+                step,
+                j == route.steps.length - 1 ? recipient : address(0)
+            );
         }
     }
 
     /// @notice Function that will loop through and execute route hops and execute all steps for each hop
     /// @param prevRoute previous hop of the route
     /// @param route current hop of the route
-    function executeAllHops(FraxswapRoute memory prevRoute, FraxswapRoute memory route) internal {
-        executeAllStepsForRoute(prevRoute, route);
+    function executeAllHops(FraxswapRoute memory prevRoute, FraxswapRoute memory route, address recipient) internal {
+        executeAllStepsForRoute(prevRoute, route, route.nextHops.length == 0 ? recipient : address(0));
         for (uint256 i; i < route.nextHops.length; ++i) {
             FraxswapRoute memory nextRoute = abi.decode(route.nextHops[i], (FraxswapRoute));
-            executeAllHops(route, nextRoute);
+            executeAllHops(route, nextRoute, recipient);
         }
     }
 
@@ -357,7 +438,11 @@ contract FraxswapRouterMultihop is ReentrancyGuard {
 
     /// @notice Utility function to get the next pool to directly fund
     /// @return nextPoolAddress address of the next pool
-    function getNextDirectFundingPool(FraxswapRoute memory route) internal pure returns (address nextPoolAddress) {
+    function getNextDirectFundingPool(
+        FraxswapRoute memory route,
+        address recipient
+    ) internal pure returns (address nextPoolAddress) {
+        if (recipient != address(0)) return recipient;
         require(route.steps.length == 1 && route.nextHops.length == 1, "FSR: DFRoutes"); // directFunding
         FraxswapRoute memory nextRoute = abi.decode(route.nextHops[0], (FraxswapRoute));
 
@@ -460,14 +545,6 @@ contract FraxswapRouterMultihop is ReentrancyGuard {
     /// --------- Events ----------
     /// ---------------------------
 
-    /// @notice Swap event emitted every swap
-    /// @param pool address of the pool to used in the step
-    /// @param tokenIn token address of the input token
-    /// @param tokenOut token address of the output token
-    /// @param amountIn amount of input token
-    /// @param amountOut amount of output token
-    event Swapped(address pool, address tokenIn, address tokenOut, uint256 amountIn, uint256 amountOut);
-
     /// @notice Routing event emitted every swap
     /// @param tokenIn address of the original input token
     /// @param tokenOut address of the final output token
@@ -507,7 +584,23 @@ interface PoolInterface {
 
     function exchange(int128 i, int128 j, uint256 dx, uint256 min_dy) external payable returns (uint256);
 
+    function exchange(
+        int128 i,
+        int128 j,
+        uint256 dx,
+        uint256 min_dy,
+        address receiver
+    ) external payable returns (uint256);
+
     function exchange_underlying(int128 i, int128 j, uint256 dx, uint256 min_dy) external returns (uint256);
+
+    function exchange_received(
+        int128 i,
+        int128 j,
+        uint256 dx,
+        uint256 min_dy,
+        address receiver
+    ) external returns (uint256);
 
     // Saddle
     function swap(
@@ -522,6 +615,9 @@ interface PoolInterface {
     function mintFPI(uint256 frax_in, uint256 min_fpi_out) external returns (uint256 fpi_out);
 
     function redeemFPI(uint256 fpi_in, uint256 min_frax_out) external returns (uint256 frax_out);
+
+    // ERC4626 redeem
+    function redeem(uint256 shares, address receiver, address owner) external returns (uint256 assets);
 
     // generic swap wrapper
     function swap(
