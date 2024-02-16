@@ -13,7 +13,6 @@ pragma solidity ^0.8.0;
 // ====================================================================
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import { IFraxswapPair } from "./interfaces/IFraxswapPair.sol";
 import { FraxswapERC20 } from "./FraxswapERC20.sol";
 import { Math } from "./libraries/Math.sol";
 import { UQ112x112 } from "./libraries/UQ112x112.sol";
@@ -22,8 +21,8 @@ import { LongTermOrdersLib } from "../twamm/LongTermOrders.sol";
 import { IUniswapV2Callee } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Callee.sol";
 
 /// @notice TWAMM LP Pair Token
-/// @author Frax Finance: https://github.com/FraxFinance
-contract FraxswapPair is IFraxswapPair, FraxswapERC20 {
+/// @author Frax Finance (https://github.com/FraxFinance)
+contract FraxswapPair is FraxswapERC20 {
     using UQ112x112 for uint224;
     using LongTermOrdersLib for LongTermOrdersLib.LongTermOrders;
     using LongTermOrdersLib for LongTermOrdersLib.ExecuteVirtualOrdersResult;
@@ -43,7 +42,7 @@ contract FraxswapPair is IFraxswapPair, FraxswapERC20 {
     uint112 public twammReserve0;
     uint112 public twammReserve1;
 
-    uint256 public override fee;
+    uint256 public fee;
 
     bool public newSwapsPaused;
 
@@ -77,6 +76,17 @@ contract FraxswapPair is IFraxswapPair, FraxswapERC20 {
     /// --------- Events ----------
     /// ---------------------------
 
+    event Mint(address indexed sender, uint256 amount0, uint256 amount1);
+    event Burn(address indexed sender, uint256 amount0, uint256 amount1, address indexed to);
+    event Swap(
+        address indexed sender,
+        uint256 amount0In,
+        uint256 amount1In,
+        uint256 amount0Out,
+        uint256 amount1Out,
+        address indexed to
+    );
+    event Sync(uint112 reserve0, uint112 reserve1);
     ///@notice An event emitted when a long term swap from token0 to token1 is performed
     event LongTermSwap0To1(address indexed addr, uint256 orderId, uint256 amount0In, uint256 numberOfTimeIntervals);
 
@@ -120,19 +130,19 @@ contract FraxswapPair is IFraxswapPair, FraxswapERC20 {
     /// -----UNISWAPV2 Parameters -----
     /// -------------------------------
 
-    uint256 public constant override MINIMUM_LIQUIDITY = 10 ** 3;
+    uint256 public constant MINIMUM_LIQUIDITY = 10 ** 3;
     bytes4 private constant SELECTOR = bytes4(keccak256(bytes("transfer(address,uint256)")));
 
-    address public override factory;
-    address public override token0;
-    address public override token1;
+    address public factory;
+    address public token0;
+    address public token1;
 
     uint112 private reserve0; // uses single storage slot, accessible via getReserves
     uint112 private reserve1; // uses single storage slot, accessible via getReserves
 
     uint32 private blockTimestampLast; // uses single storage slot, accessible via getReserves
 
-    uint256 public override kLast; // reserve0 * reserve1, as of immediately after the most recent liquidity event
+    uint256 public kLast; // reserve0 * reserve1, as of immediately after the most recent liquidity event
 
     // Track order IDs
     mapping(address => uint256[]) public orderIDsForUser;
@@ -145,21 +155,21 @@ contract FraxswapPair is IFraxswapPair, FraxswapERC20 {
         uint256 price1CumulativeLast;
     }
 
-    function price0CumulativeLast() public view override returns (uint256) {
+    function price0CumulativeLast() public view returns (uint256) {
         return
             TWAPObservationHistory.length > 0
                 ? TWAPObservationHistory[TWAPObservationHistory.length - 1].price0CumulativeLast
                 : 0;
     }
 
-    function price1CumulativeLast() public view override returns (uint256) {
+    function price1CumulativeLast() public view returns (uint256) {
         return
             TWAPObservationHistory.length > 0
                 ? TWAPObservationHistory[TWAPObservationHistory.length - 1].price1CumulativeLast
                 : 0;
     }
 
-    function getTWAPHistoryLength() public view override returns (uint256) {
+    function getTWAPHistoryLength() public view returns (uint256) {
         return TWAPObservationHistory.length;
     }
 
@@ -172,11 +182,11 @@ contract FraxswapPair is IFraxswapPair, FraxswapERC20 {
         unlocked = 1;
     }
 
-    function getOrderIDsForUser(address user) external view override returns (uint256[] memory) {
+    function getOrderIDsForUser(address user) external view returns (uint256[] memory) {
         return orderIDsForUser[user];
     }
 
-    function getOrderIDsForUserLength(address user) external view override returns (uint256) {
+    function getOrderIDsForUserLength(address user) external view returns (uint256) {
         return orderIDsForUser[user].length;
     }
 
@@ -194,19 +204,13 @@ contract FraxswapPair is IFraxswapPair, FraxswapERC20 {
         }
     }
 
-    function getReserves()
-        public
-        view
-        override
-        returns (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast)
-    {
+    function getReserves() public view returns (uint112 _reserve0, uint112 _reserve1, uint32 _blockTimestampLast) {
         return (reserve0, reserve1, blockTimestampLast);
     }
 
     function getTwammReserves()
         public
         view
-        override
         returns (
             uint112 _reserve0,
             uint112 _reserve1,
@@ -248,7 +252,7 @@ contract FraxswapPair is IFraxswapPair, FraxswapERC20 {
     }
 
     // called once by the factory at time of deployment. will revert if fee is bad
-    function initialize(address _token0, address _token1, uint256 _fee) external override feeCheck(_fee) {
+    function initialize(address _token0, address _token1, uint256 _fee) external feeCheck(_fee) {
         require(msg.sender == factory); // FORBIDDEN
         // sufficient check
         token0 = _token0;
@@ -326,10 +330,10 @@ contract FraxswapPair is IFraxswapPair, FraxswapERC20 {
     }
 
     // this low-level function should be called from a contract which performs important safety checks
-    function mint(address to) external override lock execVirtualOrders returns (uint256 liquidity) {
+    function mint(address to) external lock execVirtualOrders returns (uint256 liquidity) {
         (uint112 _reserve0, uint112 _reserve1, ) = getReserves(); // gas savings
-        uint256 balance0 = IERC20V5(token0).balanceOf(address(this)) - twammReserve0;
-        uint256 balance1 = IERC20V5(token1).balanceOf(address(this)) - twammReserve1;
+        uint256 balance0 = IERC20(token0).balanceOf(address(this)) - twammReserve0;
+        uint256 balance1 = IERC20(token1).balanceOf(address(this)) - twammReserve1;
         uint256 amount0 = balance0 - _reserve0;
         uint256 amount1 = balance1 - _reserve1;
 
@@ -350,12 +354,12 @@ contract FraxswapPair is IFraxswapPair, FraxswapERC20 {
     }
 
     // this low-level function should be called from a contract which performs important safety checks
-    function burn(address to) external override lock execVirtualOrders returns (uint256 amount0, uint256 amount1) {
+    function burn(address to) external lock execVirtualOrders returns (uint256 amount0, uint256 amount1) {
         (uint112 _reserve0, uint112 _reserve1, ) = getReserves(); // gas savings
         address _token0 = token0; // gas savings
         address _token1 = token1; // gas savings
-        uint256 balance0 = IERC20V5(_token0).balanceOf(address(this)) - twammReserve0;
-        uint256 balance1 = IERC20V5(_token1).balanceOf(address(this)) - twammReserve1;
+        uint256 balance0 = IERC20(_token0).balanceOf(address(this)) - twammReserve0;
+        uint256 balance1 = IERC20(_token1).balanceOf(address(this)) - twammReserve1;
         uint256 liquidity = balanceOf[address(this)];
 
         bool feeOn = _mintFee(_reserve0, _reserve1);
@@ -366,8 +370,8 @@ contract FraxswapPair is IFraxswapPair, FraxswapERC20 {
         _burn(address(this), liquidity);
         _safeTransfer(_token0, to, amount0);
         _safeTransfer(_token1, to, amount1);
-        balance0 = IERC20V5(_token0).balanceOf(address(this)) - twammReserve0;
-        balance1 = IERC20V5(_token1).balanceOf(address(this)) - twammReserve1;
+        balance0 = IERC20(_token0).balanceOf(address(this)) - twammReserve0;
+        balance1 = IERC20(_token1).balanceOf(address(this)) - twammReserve1;
 
         _update(balance0, balance1, _reserve0, _reserve1, _getTimeElapsed());
         if (feeOn) kLast = uint256(reserve0) * reserve1; // reserve0 and reserve1 are up-to-date
@@ -380,7 +384,7 @@ contract FraxswapPair is IFraxswapPair, FraxswapERC20 {
         uint256 amount1Out,
         address to,
         bytes calldata data
-    ) external override lock execVirtualOrders {
+    ) external lock execVirtualOrders {
         if (!(amount0Out > 0 || amount1Out > 0)) revert InsufficientOutputAmount(); // INSUFFICIENT_OUTPUT_AMOUNT
         (uint112 _reserve0, uint112 _reserve1, ) = getReserves(); // gas savings
         if (!(amount0Out < _reserve0 && amount1Out < _reserve1)) revert InsufficientLiquidity(_reserve0, _reserve1); // INSUFFICIENT_LIQUIDITY
@@ -395,8 +399,8 @@ contract FraxswapPair is IFraxswapPair, FraxswapERC20 {
             if (amount0Out > 0) _safeTransfer(_token0, to, amount0Out); // optimistically transfer tokens
             if (amount1Out > 0) _safeTransfer(_token1, to, amount1Out); // optimistically transfer tokens
             if (data.length > 0) IUniswapV2Callee(to).uniswapV2Call(msg.sender, amount0Out, amount1Out, data);
-            balance0 = IERC20V5(_token0).balanceOf(address(this)) - twammReserve0;
-            balance1 = IERC20V5(_token1).balanceOf(address(this)) - twammReserve1;
+            balance0 = IERC20(_token0).balanceOf(address(this)) - twammReserve0;
+            balance1 = IERC20(_token1).balanceOf(address(this)) - twammReserve1;
         }
         uint256 amount0In = balance0 > _reserve0 - amount0Out ? balance0 - (_reserve0 - amount0Out) : 0;
         uint256 amount1In = balance1 > _reserve1 - amount1Out ? balance1 - (_reserve1 - amount1Out) : 0;
@@ -416,18 +420,18 @@ contract FraxswapPair is IFraxswapPair, FraxswapERC20 {
     }
 
     // force balances to match reserves
-    function skim(address to) external override lock execVirtualOrders {
+    function skim(address to) external lock execVirtualOrders {
         address _token0 = token0; // gas savings
         address _token1 = token1; // gas savings
-        _safeTransfer(_token0, to, IERC20V5(_token0).balanceOf(address(this)) - (reserve0 + twammReserve0));
-        _safeTransfer(_token1, to, IERC20V5(_token1).balanceOf(address(this)) - (reserve1 + twammReserve1));
+        _safeTransfer(_token0, to, IERC20(_token0).balanceOf(address(this)) - (reserve0 + twammReserve0));
+        _safeTransfer(_token1, to, IERC20(_token1).balanceOf(address(this)) - (reserve1 + twammReserve1));
     }
 
     // force reserves to match balances
-    function sync() external override lock execVirtualOrders {
+    function sync() external lock execVirtualOrders {
         _update(
-            IERC20V5(token0).balanceOf(address(this)) - twammReserve0,
-            IERC20V5(token1).balanceOf(address(this)) - twammReserve1,
+            IERC20(token0).balanceOf(address(this)) - twammReserve0,
+            IERC20(token1).balanceOf(address(this)) - twammReserve1,
             reserve0,
             reserve1,
             _getTimeElapsed()
@@ -439,7 +443,7 @@ contract FraxswapPair is IFraxswapPair, FraxswapERC20 {
     ///@notice calculate the amount in for token using the balance diff to handle feeOnTransfer tokens
     function transferAmountIn(address token, uint256 amountIn) internal returns (uint256) {
         // prev balance
-        uint256 bal = IERC20V5(token).balanceOf(address(this));
+        uint256 bal = IERC20(token).balanceOf(address(this));
         // transfer amount to contract
 
         // safeTransferFrom
@@ -450,7 +454,7 @@ contract FraxswapPair is IFraxswapPair, FraxswapERC20 {
         require(success && (data.length == 0 || abi.decode(data, (bool))));
 
         // balance change
-        return IERC20V5(token).balanceOf(address(this)) - bal;
+        return IERC20(token).balanceOf(address(this)) - bal;
     }
 
     ///@notice create a long term order to swap from token0
@@ -560,7 +564,7 @@ contract FraxswapPair is IFraxswapPair, FraxswapERC20 {
 
     ///@notice convenience function to execute virtual orders. Note that this already happens
     ///before most interactions with the AMM
-    function executeVirtualOrders(uint256 blockTimestamp) public override lock {
+    function executeVirtualOrders(uint256 blockTimestamp) public lock {
         // blockTimestamp is valid then execute the long term orders otherwise noop
         if (longTermOrders.lastVirtualOrderTimestamp < blockTimestamp && blockTimestamp <= block.timestamp) {
             executeVirtualOrdersInternal(blockTimestamp);
@@ -572,12 +576,12 @@ contract FraxswapPair is IFraxswapPair, FraxswapERC20 {
     /// ---------------------------
 
     ///@notice util function for getting the next orderId
-    function getNextOrderID() public view override returns (uint256) {
+    function getNextOrderID() public view returns (uint256) {
         return longTermOrders.orderId;
     }
 
     ///@notice util function for checking if the twamm is up to date
-    function twammUpToDate() public view override returns (bool) {
+    function twammUpToDate() public view returns (bool) {
         return block.timestamp == longTermOrders.lastVirtualOrderTimestamp;
     }
 
@@ -619,7 +623,6 @@ contract FraxswapPair is IFraxswapPair, FraxswapERC20 {
     function getTwammState()
         public
         view
-        override
         returns (
             uint256 token0Rate,
             uint256 token1Rate,
@@ -640,7 +643,7 @@ contract FraxswapPair is IFraxswapPair, FraxswapERC20 {
     ///@notice returns salesRates ending on this blockTimestamp
     function getTwammSalesRateEnding(
         uint256 _blockTimestamp
-    ) public view override returns (uint256 orderPool0SalesRateEnding, uint256 orderPool1SalesRateEnding) {
+    ) public view returns (uint256 orderPool0SalesRateEnding, uint256 orderPool1SalesRateEnding) {
         uint256 lastExpiryTimestamp = _blockTimestamp - (_blockTimestamp % orderTimeInterval);
         orderPool0SalesRateEnding = longTermOrders.OrderPool0.salesRateEndingPerTimeInterval[lastExpiryTimestamp];
         orderPool1SalesRateEnding = longTermOrders.OrderPool1.salesRateEndingPerTimeInterval[lastExpiryTimestamp];
@@ -649,7 +652,7 @@ contract FraxswapPair is IFraxswapPair, FraxswapERC20 {
     ///@notice returns reward factors at this blockTimestamp
     function getTwammRewardFactor(
         uint256 _blockTimestamp
-    ) public view override returns (uint256 rewardFactorPool0AtTimestamp, uint256 rewardFactorPool1AtTimestamp) {
+    ) public view returns (uint256 rewardFactorPool0AtTimestamp, uint256 rewardFactorPool1AtTimestamp) {
         uint256 lastExpiryTimestamp = _blockTimestamp - (_blockTimestamp % orderTimeInterval);
         rewardFactorPool0AtTimestamp = longTermOrders.OrderPool0.rewardFactorAtTimestamp[lastExpiryTimestamp];
         rewardFactorPool1AtTimestamp = longTermOrders.OrderPool1.rewardFactorAtTimestamp[lastExpiryTimestamp];
@@ -661,7 +664,6 @@ contract FraxswapPair is IFraxswapPair, FraxswapERC20 {
     )
         public
         view
-        override
         returns (
             uint256 id,
             uint256 creationTimestamp,
@@ -692,7 +694,7 @@ contract FraxswapPair is IFraxswapPair, FraxswapERC20 {
     function getTwammOrderProceedsView(
         uint256 orderId,
         uint256 blockTimestamp
-    ) public view override returns (bool orderExpired, uint256 totalReward) {
+    ) public view returns (bool orderExpired, uint256 totalReward) {
         require(orderId < longTermOrders.orderId); // INVALID ORDERID
         LongTermOrdersLib.OrderPool storage orderPool = LongTermOrdersLib.getOrderPool(
             longTermOrders,
@@ -703,14 +705,14 @@ contract FraxswapPair is IFraxswapPair, FraxswapERC20 {
 
     ///@notice returns the twamm Order withdrawable proceeds
     // Need to update the virtual orders first
-    function getTwammOrderProceeds(uint256 orderId) public override returns (bool orderExpired, uint256 totalReward) {
+    function getTwammOrderProceeds(uint256 orderId) public returns (bool orderExpired, uint256 totalReward) {
         executeVirtualOrders(block.timestamp);
         return getTwammOrderProceedsView(orderId, block.timestamp);
     }
 
     ///@notice Pauses the execution of existing twamm orders and the creation of new twamm orders
     // Only callable once by anyone once the pause is toggled on the factory
-    function togglePauseNewSwaps() external override {
+    function togglePauseNewSwaps() external {
         require(!newSwapsPaused && IFraxswapFactory(factory).globalPause()); // globalPause is enabled
         // Pause new swaps
         newSwapsPaused = true;

@@ -12,23 +12,23 @@ pragma solidity ^0.8.0;
 // ========================== FraxswapERC20 ===========================
 // ====================================================================
 
-import { IUniswapV2ERC20 } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2ERC20.sol";
-
 /// @notice Fraxswap ERC-20
 /// @author Frax Finance (https://github.com/FraxFinance)
-contract FraxswapERC20 is IUniswapV2ERC20 {
-    string public constant override name = "Fraxswap V2";
-    string public constant override symbol = "FS-V2";
-    uint8 public constant override decimals = 18;
-    uint256 public override totalSupply;
-    mapping(address => uint256) public override balanceOf;
-    mapping(address => mapping(address => uint256)) public override allowance;
+contract FraxswapERC20 {
+    string public constant name = "Fraxswap V2";
+    string public constant symbol = "FS-V2";
+    uint8 public constant decimals = 18;
+    uint256 public totalSupply;
+    mapping(address => uint256) public balanceOf;
+    mapping(address => mapping(address => uint256)) public allowance;
 
-    bytes32 public override DOMAIN_SEPARATOR;
+    bytes32 public immutable DOMAIN_SEPARATOR;
     // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
-    bytes32 public constant override PERMIT_TYPEHASH =
-        0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
-    mapping(address => uint256) public override nonces;
+    bytes32 public constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
+    mapping(address => uint256) public nonces;
+
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Transfer(address indexed from, address indexed to, uint256 value);
 
     constructor() {
         uint256 chainId = block.chainid;
@@ -66,17 +66,17 @@ contract FraxswapERC20 is IUniswapV2ERC20 {
         emit Transfer(from, to, value);
     }
 
-    function approve(address spender, uint256 value) external override returns (bool) {
+    function approve(address spender, uint256 value) external returns (bool) {
         _approve(msg.sender, spender, value);
         return true;
     }
 
-    function transfer(address to, uint256 value) external override returns (bool) {
+    function transfer(address to, uint256 value) external returns (bool) {
         _transfer(msg.sender, to, value);
         return true;
     }
 
-    function transferFrom(address from, address to, uint256 value) external override returns (bool) {
+    function transferFrom(address from, address to, uint256 value) external returns (bool) {
         if (allowance[from][msg.sender] != type(uint256).max) {
             allowance[from][msg.sender] = allowance[from][msg.sender] - value;
         }
@@ -92,7 +92,7 @@ contract FraxswapERC20 is IUniswapV2ERC20 {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external override {
+    ) external {
         require(deadline >= block.timestamp); // EXPIRED
         bytes32 digest = keccak256(
             abi.encodePacked(

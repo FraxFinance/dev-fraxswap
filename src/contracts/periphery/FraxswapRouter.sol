@@ -13,19 +13,18 @@ pragma solidity ^0.8.0;
 // ====================================================================
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import { IUniswapV2Router02 } from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+import { IFraxswapFactory } from "src/contracts/core/interfaces/IFraxswapFactory.sol";
+import { IFraxswapPair } from "src/contracts/core/interfaces/IFraxswapPair.sol";
+import { TransferHelper } from "src/contracts/libraries/TransferHelper.sol";
 
-import "src/contracts/core/interfaces/IFraxswapFactory.sol";
-import "src/contracts/core/interfaces/IFraxswapPair.sol";
-import "src/contracts/libraries/TransferHelper.sol";
+import { FraxswapRouterLibrary } from "./FraxswapRouterLibrary.sol";
+import { IWETH } from "./interfaces/IWETH.sol";
 
-import "./FraxswapRouterLibrary.sol";
-import "./interfaces/IWETH.sol";
-
-// TWAMM Router
-contract FraxswapRouter is IUniswapV2Router02 {
-    address public immutable override factory;
-    address public immutable override WETH;
+/// @notice TWAMM Router
+/// @author Frax Finance (https://github.com/FraxFinance)
+contract FraxswapRouter {
+    address public immutable factory;
+    address public immutable WETH;
 
     modifier ensure(uint256 deadline) {
         require(deadline >= block.timestamp, "FraxswapV1Router: EXPIRED");
@@ -84,7 +83,7 @@ contract FraxswapRouter is IUniswapV2Router02 {
         uint256 amountBMin,
         address to,
         uint256 deadline
-    ) external virtual override ensure(deadline) returns (uint256 amountA, uint256 amountB, uint256 liquidity) {
+    ) external virtual ensure(deadline) returns (uint256 amountA, uint256 amountB, uint256 liquidity) {
         (amountA, amountB) = _addLiquidity(tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin);
         address pair = FraxswapRouterLibrary.pairFor(factory, tokenA, tokenB);
         TransferHelper.safeTransferFrom(tokenA, msg.sender, pair, amountA);
@@ -99,14 +98,7 @@ contract FraxswapRouter is IUniswapV2Router02 {
         uint256 amountETHMin,
         address to,
         uint256 deadline
-    )
-        external
-        payable
-        virtual
-        override
-        ensure(deadline)
-        returns (uint256 amountToken, uint256 amountETH, uint256 liquidity)
-    {
+    ) external payable virtual ensure(deadline) returns (uint256 amountToken, uint256 amountETH, uint256 liquidity) {
         (amountToken, amountETH) = _addLiquidity(
             token,
             WETH,
@@ -133,7 +125,7 @@ contract FraxswapRouter is IUniswapV2Router02 {
         uint256 amountBMin,
         address to,
         uint256 deadline
-    ) public virtual override ensure(deadline) returns (uint256 amountA, uint256 amountB) {
+    ) public virtual ensure(deadline) returns (uint256 amountA, uint256 amountB) {
         address pair = FraxswapRouterLibrary.pairFor(factory, tokenA, tokenB);
         IFraxswapPair(pair).transferFrom(msg.sender, pair, liquidity); // send liquidity to pair
         (uint256 amount0, uint256 amount1) = IFraxswapPair(pair).burn(to);
@@ -150,7 +142,7 @@ contract FraxswapRouter is IUniswapV2Router02 {
         uint256 amountETHMin,
         address to,
         uint256 deadline
-    ) public virtual override ensure(deadline) returns (uint256 amountToken, uint256 amountETH) {
+    ) public virtual ensure(deadline) returns (uint256 amountToken, uint256 amountETH) {
         (amountToken, amountETH) = removeLiquidity(
             token,
             WETH,
@@ -177,7 +169,7 @@ contract FraxswapRouter is IUniswapV2Router02 {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external virtual override returns (uint256 amountA, uint256 amountB) {
+    ) external virtual returns (uint256 amountA, uint256 amountB) {
         address pair = FraxswapRouterLibrary.pairFor(factory, tokenA, tokenB);
         uint256 value = approveMax ? type(uint256).max : liquidity;
         IFraxswapPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
@@ -195,7 +187,7 @@ contract FraxswapRouter is IUniswapV2Router02 {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external virtual override returns (uint256 amountToken, uint256 amountETH) {
+    ) external virtual returns (uint256 amountToken, uint256 amountETH) {
         address pair = FraxswapRouterLibrary.pairFor(factory, token, WETH);
         uint256 value = approveMax ? type(uint256).max : liquidity;
         IFraxswapPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
@@ -210,7 +202,7 @@ contract FraxswapRouter is IUniswapV2Router02 {
         uint256 amountETHMin,
         address to,
         uint256 deadline
-    ) public virtual override ensure(deadline) returns (uint256 amountETH) {
+    ) public virtual ensure(deadline) returns (uint256 amountETH) {
         (, amountETH) = removeLiquidity(token, WETH, liquidity, amountTokenMin, amountETHMin, address(this), deadline);
         TransferHelper.safeTransfer(token, to, IERC20(token).balanceOf(address(this)));
         IWETH(WETH).withdraw(amountETH);
@@ -228,7 +220,7 @@ contract FraxswapRouter is IUniswapV2Router02 {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external virtual override returns (uint256 amountETH) {
+    ) external virtual returns (uint256 amountETH) {
         address pair = FraxswapRouterLibrary.pairFor(factory, token, WETH);
         uint256 value = approveMax ? type(uint256).max : liquidity;
         IFraxswapPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
@@ -268,7 +260,7 @@ contract FraxswapRouter is IUniswapV2Router02 {
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external virtual override ensure(deadline) returns (uint256[] memory amounts) {
+    ) external virtual ensure(deadline) returns (uint256[] memory amounts) {
         amounts = FraxswapRouterLibrary.getAmountsOutWithTwamm(factory, amountIn, path);
         require(amounts[amounts.length - 1] >= amountOutMin, "FraxswapV1Router: INSUFFICIENT_OUTPUT_AMOUNT");
         TransferHelper.safeTransferFrom(
@@ -286,7 +278,7 @@ contract FraxswapRouter is IUniswapV2Router02 {
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external virtual override ensure(deadline) returns (uint256[] memory amounts) {
+    ) external virtual ensure(deadline) returns (uint256[] memory amounts) {
         amounts = FraxswapRouterLibrary.getAmountsInWithTwamm(factory, amountOut, path);
         require(amounts[0] <= amountInMax, "FraxswapV1Router: EXCESSIVE_INPUT_AMOUNT");
         TransferHelper.safeTransferFrom(
@@ -303,7 +295,7 @@ contract FraxswapRouter is IUniswapV2Router02 {
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external payable virtual override ensure(deadline) returns (uint256[] memory amounts) {
+    ) external payable virtual ensure(deadline) returns (uint256[] memory amounts) {
         require(path[0] == WETH, "FraxswapV1Router: INVALID_PATH");
         amounts = FraxswapRouterLibrary.getAmountsOutWithTwamm(factory, msg.value, path);
         require(amounts[amounts.length - 1] >= amountOutMin, "FraxswapV1Router: INSUFFICIENT_OUTPUT_AMOUNT");
@@ -318,7 +310,7 @@ contract FraxswapRouter is IUniswapV2Router02 {
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external virtual override ensure(deadline) returns (uint256[] memory amounts) {
+    ) external virtual ensure(deadline) returns (uint256[] memory amounts) {
         require(path[path.length - 1] == WETH, "FraxswapV1Router: INVALID_PATH");
         amounts = FraxswapRouterLibrary.getAmountsInWithTwamm(factory, amountOut, path);
         require(amounts[0] <= amountInMax, "FraxswapV1Router: EXCESSIVE_INPUT_AMOUNT");
@@ -339,7 +331,7 @@ contract FraxswapRouter is IUniswapV2Router02 {
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external virtual override ensure(deadline) returns (uint256[] memory amounts) {
+    ) external virtual ensure(deadline) returns (uint256[] memory amounts) {
         require(path[path.length - 1] == WETH, "FraxswapV1Router: INVALID_PATH");
         amounts = FraxswapRouterLibrary.getAmountsOutWithTwamm(factory, amountIn, path);
         require(amounts[amounts.length - 1] >= amountOutMin, "FraxswapV1Router: INSUFFICIENT_OUTPUT_AMOUNT");
@@ -359,7 +351,7 @@ contract FraxswapRouter is IUniswapV2Router02 {
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external payable virtual override ensure(deadline) returns (uint256[] memory amounts) {
+    ) external payable virtual ensure(deadline) returns (uint256[] memory amounts) {
         require(path[0] == WETH, "FraxswapV1Router: INVALID_PATH");
         amounts = FraxswapRouterLibrary.getAmountsInWithTwamm(factory, amountOut, path);
         require(amounts[0] <= msg.value, "FraxswapV1Router: EXCESSIVE_INPUT_AMOUNT");
@@ -404,7 +396,7 @@ contract FraxswapRouter is IUniswapV2Router02 {
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external virtual override ensure(deadline) {
+    ) external virtual ensure(deadline) {
         TransferHelper.safeTransferFrom(
             path[0],
             msg.sender,
@@ -424,7 +416,7 @@ contract FraxswapRouter is IUniswapV2Router02 {
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external payable virtual override ensure(deadline) {
+    ) external payable virtual ensure(deadline) {
         require(path[0] == WETH, "FraxswapV1Router: INVALID_PATH");
         uint256 amountIn = msg.value;
         IWETH(WETH).deposit{ value: amountIn }();
@@ -443,7 +435,7 @@ contract FraxswapRouter is IUniswapV2Router02 {
         address[] calldata path,
         address to,
         uint256 deadline
-    ) external virtual override ensure(deadline) {
+    ) external virtual ensure(deadline) {
         require(path[path.length - 1] == WETH, "FraxswapV1Router: INVALID_PATH");
         TransferHelper.safeTransferFrom(
             path[0],
@@ -459,11 +451,7 @@ contract FraxswapRouter is IUniswapV2Router02 {
     }
 
     // **** LIBRARY FUNCTIONS ****
-    function quote(
-        uint256 amountA,
-        uint256 reserveA,
-        uint256 reserveB
-    ) public pure virtual override returns (uint256 amountB) {
+    function quote(uint256 amountA, uint256 reserveA, uint256 reserveB) public pure virtual returns (uint256 amountB) {
         return FraxswapRouterLibrary.quote(amountA, reserveA, reserveB);
     }
 
@@ -471,7 +459,7 @@ contract FraxswapRouter is IUniswapV2Router02 {
         uint256 amountIn,
         uint256 reserveIn,
         uint256 reserveOut
-    ) public pure virtual override returns (uint256 amountOut) {
+    ) public pure virtual returns (uint256 amountOut) {
         revert("Deprecated: Use getAmountsOut"); // depends on the fee of the pool
     }
 
@@ -479,21 +467,21 @@ contract FraxswapRouter is IUniswapV2Router02 {
         uint256 amountOut,
         uint256 reserveIn,
         uint256 reserveOut
-    ) public pure virtual override returns (uint256 amountIn) {
+    ) public pure virtual returns (uint256 amountIn) {
         revert("Deprecated: Use getAmountsIn"); // depends on the fee of the pool
     }
 
     function getAmountsOut(
         uint256 amountIn,
         address[] memory path
-    ) public view virtual override returns (uint256[] memory amounts) {
+    ) public view virtual returns (uint256[] memory amounts) {
         return FraxswapRouterLibrary.getAmountsOut(factory, amountIn, path);
     }
 
     function getAmountsIn(
         uint256 amountOut,
         address[] memory path
-    ) public view virtual override returns (uint256[] memory amounts) {
+    ) public view virtual returns (uint256[] memory amounts) {
         return FraxswapRouterLibrary.getAmountsIn(factory, amountOut, path);
     }
 

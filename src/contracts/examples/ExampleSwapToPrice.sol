@@ -1,22 +1,23 @@
 pragma solidity >=0.6.6;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
 
 import "src/contracts/core/interfaces/IFraxswapPair.sol";
-import "./libraries/Babylonian.sol";
 import "src/contracts/libraries/TransferHelper.sol";
-
-import "./libraries/UniswapV2LiquidityMathLibrary.sol";
-import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
 import "src/contracts/periphery/FraxswapRouterLibrary.sol";
+
+import "./libraries/Babylonian.sol";
+import "./libraries/UniswapV2LiquidityMathLibrary.sol";
+import "./libraries/SafeMath.sol";
 
 contract ExampleSwapToPrice {
     using SafeMath for uint256;
 
-    IUniswapV2Router01V5 public immutable router;
+    IUniswapV2Router01 public immutable router;
     address public immutable factory;
 
-    constructor(address factory_, IUniswapV2Router01V5 router_) {
+    constructor(address factory_, IUniswapV2Router01 router_) {
         factory = factory_;
         router = router_;
     }

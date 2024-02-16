@@ -14,24 +14,24 @@ pragma abicoder v2;
 // ====================================================================
 // Fraxswap Router Multihop
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@uniswap/v3-core/contracts/libraries/SafeCast.sol";
-import "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
-import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
-import "@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3SwapCallback.sol";
-import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
-import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { SafeCast } from "@uniswap/v3-core/contracts/libraries/SafeCast.sol";
+import { IWETH } from "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
+import { TransferHelper } from "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
+import { IUniswapV3SwapCallback } from "@uniswap/v3-core/contracts/interfaces/callback/IUniswapV3SwapCallback.sol";
+import { IUniswapV3Pool } from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
+import { IUniswapV2Pair } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 
 /// @title Fraxswap Router Multihop
 /// @dev Router for swapping across the majority of the FRAX liquidity
-contract FraxswapRouterMultihop is ReentrancyGuard, Ownable {
+/// @author Frax Finance (https://github.com/FraxFinance)
+contract FraxswapRouterMultihop is ReentrancyGuard {
     using SafeCast for uint256;
     using SafeCast for int256;
 
-    IWETH WETH9;
-    address FRAX;
+    IWETH public immutable WETH9;
+    address public immutable FRAX;
 
     constructor(IWETH _WETH9, address _FRAX) {
         WETH9 = _WETH9;
