@@ -4,9 +4,9 @@ import "src/contracts/core/interfaces/IUniswapV2FactoryV5.sol";
 import "src/contracts/core/interfaces/IFraxswapPair.sol";
 import "src/contracts/libraries/FixedPoint.sol";
 
-import "src/contracts/periphery/libraries/SafeMath.sol";
-import "src/contracts/periphery/libraries/FraxswapRouterLibrary.sol";
-import "src/contracts/periphery/libraries/UniswapV2OracleLibrary.sol";
+import "src/contracts/libraries/SafeMath.sol";
+import "src/contracts/periphery/FraxswapRouterLibrary.sol";
+import "./libraries/UniswapV2OracleLibrary.sol";
 
 // sliding window oracle that uses observations collected over a window to provide moving price averages in the past
 // `windowSize` with a precision of `windowSize / granularity`

@@ -11,35 +11,18 @@ pragma solidity ^0.8.0;
 // ====================================================================
 // =========================== FraxswapPair ===========================
 // ====================================================================
-// TWAMM LP Pair Token
-// Inspired by https://www.paradigm.xyz/2021/07/twamm
-// https://github.com/para-dave/twamm
 
-// Frax Finance: https://github.com/FraxFinance
+import { IUniswapV2PairPartialV5 } from "./interfaces/IUniswapV2PairPartialV5.sol";
+import { FraxswapERC20 } from "./FraxswapERC20.sol";
+import { Math } from "./libraries/Math.sol";
+import { UQ112x112 } from "./libraries/UQ112x112.sol";
+import { IERC20V5 } from "./interfaces/IERC20V5.sol";
+import { IUniswapV2FactoryV5 } from "./interfaces/IUniswapV2FactoryV5.sol";
+import { IUniswapV2CalleeV5 } from "./interfaces/IUniswapV2CalleeV5.sol";
+import { LongTermOrdersLib } from "../twamm/LongTermOrders.sol";
 
-// Primary Author(s)
-// Rich Gee: https://github.com/zer0blockchain
-// Dennis: https://github.com/denett
-
-// Logic / Algorithm Ideas
-// FrankieIsLost: https://github.com/FrankieIsLost
-
-// Reviewer(s) / Contributor(s)
-// Travis Moore: https://github.com/FortisFortuna
-// Sam Kazemian: https://github.com/samkazemian
-// Drake Evans: https://github.com/DrakeEvans
-// Jack Corddry: https://github.com/corddry
-// Justin Moore: https://github.com/0xJM
-
-import "./interfaces/IUniswapV2PairPartialV5.sol";
-import "./FraxswapERC20.sol";
-import "./libraries/Math.sol";
-import "./libraries/UQ112x112.sol";
-import "./interfaces/IERC20V5.sol";
-import "./interfaces/IUniswapV2FactoryV5.sol";
-import "./interfaces/IUniswapV2CalleeV5.sol";
-import "../twamm/LongTermOrders.sol";
-
+/// @notice TWAMM LP Pair Token
+/// @author Frax Finance: https://github.com/FraxFinance
 contract FraxswapPair is IUniswapV2PairPartialV5, FraxswapERC20 {
     using UQ112x112 for uint224;
     using LongTermOrdersLib for LongTermOrdersLib.LongTermOrders;

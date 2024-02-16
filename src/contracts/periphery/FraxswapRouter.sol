@@ -11,35 +11,17 @@ pragma solidity ^0.8.0;
 // ====================================================================
 // ========================== FraxswapRouter ==========================
 // ====================================================================
-// TWAMM Router
-// Inspired by https://www.paradigm.xyz/2021/07/twamm
-// https://github.com/para-dave/twamm
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-// Frax Finance: https://github.com/FraxFinance
-
-// Primary Author(s)
-// Rich Gee: https://github.com/zer0blockchain
-// Dennis: https://github.com/denett
-
-// Logic / Algorithm Ideas
-// FrankieIsLost: https://github.com/FrankieIsLost
-
-// Reviewer(s) / Contributor(s)
-// Travis Moore: https://github.com/FortisFortuna
-// Sam Kazemian: https://github.com/samkazemian
-// Drake Evans: https://github.com/DrakeEvans
-// Jack Corddry: https://github.com/corddry
-// Justin Moore: https://github.com/0xJM
-
-import "../core/interfaces/IUniswapV2FactoryV5.sol";
-import "../core/interfaces/IFraxswapPair.sol";
-import "../libraries/TransferHelper.sol";
+import "src/contracts/core/interfaces/IUniswapV2FactoryV5.sol";
+import "src/contracts/core/interfaces/IFraxswapPair.sol";
+import "src/contracts/libraries/TransferHelper.sol";
 
 import "./interfaces/IUniswapV2Router02V5.sol";
-import "./libraries/FraxswapRouterLibrary.sol";
-import "./interfaces/IERC20.sol";
+import "./FraxswapRouterLibrary.sol";
 import "./interfaces/IWETH.sol";
 
+// TWAMM Router
 contract FraxswapRouter is IUniswapV2Router02V5 {
     address public immutable override factory;
     address public immutable override WETH;
@@ -49,7 +31,7 @@ contract FraxswapRouter is IUniswapV2Router02V5 {
         _;
     }
 
-    constructor(address _factory, address _WETH) public {
+    constructor(address _factory, address _WETH) {
         factory = _factory;
         WETH = _WETH;
     }

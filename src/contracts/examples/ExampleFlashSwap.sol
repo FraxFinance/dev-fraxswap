@@ -1,13 +1,25 @@
 pragma solidity >=0.6.6;
 
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Callee.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import "src/contracts/periphery/libraries/FraxswapRouterLibrary.sol";
+import "src/contracts/periphery/FraxswapRouterLibrary.sol";
 import "src/contracts/periphery/interfaces/V1/IUniswapV1Factory.sol";
 import "src/contracts/periphery/interfaces/V1/IUniswapV1Exchange.sol";
 import "src/contracts/periphery/interfaces/IUniswapV2Router01V5.sol";
-import "src/contracts/periphery/interfaces/IERC20.sol";
 import "src/contracts/periphery/interfaces/IWETH.sol";
+
+interface IUniswapV1Factory {
+    function getExchange(address) external view returns (address);
+}
+
+interface IUniswapV1Exchange {
+    function balanceOf(address owner) external view returns (uint256);
+    function transferFrom(address from, address to, uint256 value) external returns (bool);
+    function removeLiquidity(uint256, uint256, uint256, uint256) external returns (uint256, uint256);
+    function tokenToEthSwapInput(uint256, uint256, uint256) external returns (uint256);
+    function ethToTokenSwapInput(uint256, uint256) external payable returns (uint256);
+}
 
 contract ExampleFlashSwap is IUniswapV2Callee {
     IUniswapV1Factory immutable factoryV1;

@@ -11,28 +11,11 @@ pragma solidity ^0.8.0;
 // ====================================================================
 // ========================== FraxswapERC20 ===========================
 // ====================================================================
-// Fraxswap ERC-20
-// Inspired by https://www.paradigm.xyz/2021/07/twamm
-// https://github.com/para-dave/twamm
 
-// Frax Finance: https://github.com/FraxFinance
+import { IUniswapV2ERC20V5 } from "./interfaces/IUniswapV2ERC20V5.sol";
 
-// Primary Author(s)
-// Rich Gee: https://github.com/zer0blockchain
-// Dennis: https://github.com/denett
-
-// Logic / Algorithm Ideas
-// FrankieIsLost: https://github.com/FrankieIsLost
-
-// Reviewer(s) / Contributor(s)
-// Travis Moore: https://github.com/FortisFortuna
-// Sam Kazemian: https://github.com/samkazemian
-// Drake Evans: https://github.com/DrakeEvans
-// Jack Corddry: https://github.com/corddry
-// Justin Moore: https://github.com/0xJM
-
-import "./interfaces/IUniswapV2ERC20V5.sol";
-
+/// @notice Fraxswap ERC-20
+/// @author Frax Finance (https://github.com/FraxFinance)
 contract FraxswapERC20 is IUniswapV2ERC20V5 {
     string public constant override name = "Fraxswap V2";
     string public constant override symbol = "FS-V2";

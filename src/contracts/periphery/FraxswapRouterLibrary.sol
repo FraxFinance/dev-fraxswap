@@ -11,28 +11,11 @@ pragma solidity ^0.8.0;
 // ====================================================================
 // ======================= FraxswapRouterLibrary ======================
 // ====================================================================
-// Fraxswap Router Library Functions
-// Inspired by https://www.paradigm.xyz/2021/07/twamm
-// https://github.com/para-dave/twamm
 
-// Frax Finance: https://github.com/FraxFinance
+import { IFraxswapPair } from "src/contracts/core/interfaces/IFraxswapPair.sol";
 
-// Primary Author(s)
-// Rich Gee: https://github.com/zer0blockchain
-// Dennis: https://github.com/denett
-
-// Logic / Algorithm Ideas
-// FrankieIsLost: https://github.com/FrankieIsLost
-
-// Reviewer(s) / Contributor(s)
-// Travis Moore: https://github.com/FortisFortuna
-// Sam Kazemian: https://github.com/samkazemian
-// Drake Evans: https://github.com/DrakeEvans
-// Jack Corddry: https://github.com/corddry
-// Justin Moore: https://github.com/0xJM
-
-import "../../core/interfaces/IFraxswapPair.sol";
-
+/// @notice Fraxswap Router Library Functions
+/// @author Frax Finance: https://github.com/FraxFinance
 library FraxswapRouterLibrary {
     bytes public constant INIT_CODE_HASH = hex"46dd19aa7d926c9d41df47574e3c09b978a1572918da0e3da18ad785c1621d48"; // init code / init hash
 

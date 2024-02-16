@@ -11,29 +11,12 @@ pragma solidity ^0.8.0;
 // ====================================================================
 // ========================== FraxswapFactory =========================
 // ====================================================================
-// TWAMM LP Pair Factory
-// Inspired by https://www.paradigm.xyz/2021/07/twamm
-// https://github.com/para-dave/twamm
 
-// Frax Finance: https://github.com/FraxFinance
+import { IUniswapV2FactoryV5 } from "./interfaces/IUniswapV2FactoryV5.sol";
+import { FraxswapPair } from "./FraxswapPair.sol";
 
-// Primary Author(s)
-// Rich Gee: https://github.com/zer0blockchain
-// Dennis: https://github.com/denett
-
-// Logic / Algorithm Ideas
-// FrankieIsLost: https://github.com/FrankieIsLost
-
-// Reviewer(s) / Contributor(s)
-// Travis Moore: https://github.com/FortisFortuna
-// Sam Kazemian: https://github.com/samkazemian
-// Drake Evans: https://github.com/DrakeEvans
-// Jack Corddry: https://github.com/corddry
-// Justin Moore: https://github.com/0xJM
-
-import "./interfaces/IUniswapV2FactoryV5.sol";
-import "./FraxswapPair.sol";
-
+/// @notice TWAMM LP Pair Factory
+/// @author Frax Finance: https://github.com/FraxFinance
 contract FraxswapFactory is IUniswapV2FactoryV5 {
     address public override feeTo;
     address public override feeToSetter;

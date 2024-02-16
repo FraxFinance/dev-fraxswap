@@ -1,6 +1,6 @@
 pragma solidity >=0.6.2;
 
-import "./IUniswapV2Router01V5.sol";
+import { IUniswapV2Router01V5 } from "./IUniswapV2Router01V5.sol";
 
 interface IUniswapV2Router02V5 is IUniswapV2Router01V5 {
     function removeLiquidityETHSupportingFeeOnTransferTokens(
