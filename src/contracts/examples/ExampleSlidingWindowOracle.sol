@@ -1,12 +1,12 @@
 pragma solidity >=0.6.6;
 
-import "../../core/interfaces/IUniswapV2FactoryV5.sol";
-import "../../core/interfaces/IFraxswapPair.sol";
-import "../../libraries/FixedPoint.sol";
+import "src/contracts/core/interfaces/IUniswapV2FactoryV5.sol";
+import "src/contracts/core/interfaces/IFraxswapPair.sol";
+import "src/contracts/libraries/FixedPoint.sol";
 
-import "../libraries/SafeMath.sol";
-import "../libraries/FraxswapRouterLibrary.sol";
-import "../libraries/UniswapV2OracleLibrary.sol";
+import "src/contracts/periphery/libraries/SafeMath.sol";
+import "src/contracts/periphery/libraries/FraxswapRouterLibrary.sol";
+import "src/contracts/periphery/libraries/UniswapV2OracleLibrary.sol";
 
 // sliding window oracle that uses observations collected over a window to provide moving price averages in the past
 // `windowSize` with a precision of `windowSize / granularity`
@@ -39,7 +39,7 @@ contract ExampleSlidingWindowOracle {
     // mapping from pair address to a list of price observations of that pair
     mapping(address => Observation[]) public pairObservations;
 
-    constructor(address factory_, uint256 windowSize_, uint8 granularity_) public {
+    constructor(address factory_, uint256 windowSize_, uint8 granularity_) {
         require(granularity_ > 1, "SlidingWindowOracle: GRANULARITY");
         require(
             (periodSize = windowSize_ / granularity_) * granularity_ == windowSize_,

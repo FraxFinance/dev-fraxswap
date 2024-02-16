@@ -1,14 +1,14 @@
 pragma solidity >=0.6.6;
 
-import "../libraries/UniswapV2LiquidityMathLibrary.sol";
-import "../libraries/SafeMath.sol";
+import "src/contracts/periphery/libraries/UniswapV2LiquidityMathLibrary.sol";
+import "src/contracts/periphery/libraries/SafeMath.sol";
 
 contract ExampleComputeLiquidityValue {
     using SafeMath for uint256;
 
     address public immutable factory;
 
-    constructor(address factory_) public {
+    constructor(address factory_) {
         factory = factory_;
     }
 

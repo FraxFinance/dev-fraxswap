@@ -2,19 +2,19 @@ pragma solidity >=0.6.6;
 
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Callee.sol";
 
-import "../libraries/FraxswapRouterLibrary.sol";
-import "../interfaces/V1/IUniswapV1Factory.sol";
-import "../interfaces/V1/IUniswapV1Exchange.sol";
-import "../interfaces/IUniswapV2Router01V5.sol";
-import "../interfaces/IERC20.sol";
-import "../interfaces/IWETH.sol";
+import "src/contracts/periphery/libraries/FraxswapRouterLibrary.sol";
+import "src/contracts/periphery/interfaces/V1/IUniswapV1Factory.sol";
+import "src/contracts/periphery/interfaces/V1/IUniswapV1Exchange.sol";
+import "src/contracts/periphery/interfaces/IUniswapV2Router01V5.sol";
+import "src/contracts/periphery/interfaces/IERC20.sol";
+import "src/contracts/periphery/interfaces/IWETH.sol";
 
 contract ExampleFlashSwap is IUniswapV2Callee {
     IUniswapV1Factory immutable factoryV1;
     address immutable factory;
     IWETH immutable WETH;
 
-    constructor(address _factory, address _factoryV1, address router) public {
+    constructor(address _factory, address _factoryV1, address router) {
         factoryV1 = IUniswapV1Factory(_factoryV1);
         factory = _factory;
         WETH = IWETH(IUniswapV2Router01V5(router).WETH());

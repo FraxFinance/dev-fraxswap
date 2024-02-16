@@ -1,14 +1,14 @@
 pragma solidity >=0.6.6;
 
-import "../../core/interfaces/IFraxswapPair.sol";
-import "../..//libraries/Babylonian.sol";
-import "../..//libraries/TransferHelper.sol";
+import "src/contracts/core/interfaces/IFraxswapPair.sol";
+import "src/contracts/libraries/Babylonian.sol";
+import "src/contracts/libraries/TransferHelper.sol";
 
-import "../libraries/UniswapV2LiquidityMathLibrary.sol";
-import "../interfaces/IERC20.sol";
-import "../interfaces/IUniswapV2Router01V5.sol";
-import "../libraries/SafeMath.sol";
-import "../libraries/FraxswapRouterLibrary.sol";
+import "src/contracts/periphery/libraries/UniswapV2LiquidityMathLibrary.sol";
+import "src/contracts/periphery/interfaces/IERC20.sol";
+import "src/contracts/periphery/interfaces/IUniswapV2Router01V5.sol";
+import "src/contracts/periphery/libraries/SafeMath.sol";
+import "src/contracts/periphery/libraries/FraxswapRouterLibrary.sol";
 
 contract ExampleSwapToPrice {
     using SafeMath for uint256;
@@ -16,7 +16,7 @@ contract ExampleSwapToPrice {
     IUniswapV2Router01V5 public immutable router;
     address public immutable factory;
 
-    constructor(address factory_, IUniswapV2Router01V5 router_) public {
+    constructor(address factory_, IUniswapV2Router01V5 router_) {
         factory = factory_;
         router = router_;
     }

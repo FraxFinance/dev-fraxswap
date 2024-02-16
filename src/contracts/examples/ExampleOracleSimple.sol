@@ -1,11 +1,11 @@
 pragma solidity >=0.6.6;
 
-import "../../core/interfaces/IUniswapV2FactoryV5.sol";
-import "../../core/interfaces/IFraxswapPair.sol";
-import "../../libraries/FixedPoint.sol";
+import "src/contracts/core/interfaces/IUniswapV2FactoryV5.sol";
+import "src/contracts/core/interfaces/IFraxswapPair.sol";
+import "src/contracts/libraries/FixedPoint.sol";
 
-import "../libraries/UniswapV2OracleLibrary.sol";
-import "../libraries/FraxswapRouterLibrary.sol";
+import "src/contracts/periphery/libraries/UniswapV2OracleLibrary.sol";
+import "src/contracts/periphery/libraries/FraxswapRouterLibrary.sol";
 
 // fixed window oracle that recomputes the average price for the entire period once every period
 // note that the price average is only guaranteed to be over at least 1 period, but may be over a longer period
@@ -24,7 +24,7 @@ contract ExampleOracleSimple {
     FixedPoint.uq112x112 public price0Average;
     FixedPoint.uq112x112 public price1Average;
 
-    constructor(address factory, address tokenA, address tokenB) public {
+    constructor(address factory, address tokenA, address tokenB) {
         IFraxswapPair _pair = IFraxswapPair(FraxswapRouterLibrary.pairFor(factory, tokenA, tokenB));
         pair = _pair;
         token0 = _pair.token0();
