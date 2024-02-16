@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
-
-pragma solidity >=0.8.0;
+pragma solidity ^0.8.0;
 
 /// @notice Math library that facilitates multiplication and division that can have overflow of an intermediate value without any loss of precision.
 /// @author Adapted from https://github.com/Uniswap/uniswap-v3-core/blob/main/contracts/libraries/FullMath.sol.

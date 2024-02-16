@@ -1,4 +1,4 @@
-pragma solidity >=0.5.0;
+pragma solidity ^0.8.0;
 
 import "src/contracts/core/interfaces/IFraxswapPair.sol";
 import "./FixedPoint.sol";

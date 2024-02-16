@@ -1,4 +1,4 @@
-pragma solidity >=0.6.6;
+pragma solidity ^0.8.0;
 
 import "src/contracts/core/interfaces/IFraxswapFactory.sol";
 import "src/contracts/core/interfaces/IFraxswapPair.sol";
