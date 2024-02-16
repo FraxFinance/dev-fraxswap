@@ -11,19 +11,19 @@ pragma solidity ^0.8.0;
 // ====================================================================
 // =========================== FraxswapPair ===========================
 // ====================================================================
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import { IUniswapV2PairPartialV5 } from "./interfaces/IUniswapV2PairPartialV5.sol";
+import { IFraxswapPair } from "./interfaces/IFraxswapPair.sol";
 import { FraxswapERC20 } from "./FraxswapERC20.sol";
 import { Math } from "./libraries/Math.sol";
 import { UQ112x112 } from "./libraries/UQ112x112.sol";
-import { IERC20V5 } from "./interfaces/IERC20V5.sol";
-import { IUniswapV2FactoryV5 } from "./interfaces/IUniswapV2FactoryV5.sol";
-import { IUniswapV2CalleeV5 } from "./interfaces/IUniswapV2CalleeV5.sol";
+import { IFraxswapFactory } from "./interfaces/IFraxswapFactory.sol";
 import { LongTermOrdersLib } from "../twamm/LongTermOrders.sol";
+import { IUniswapV2Callee } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Callee.sol";
 
 /// @notice TWAMM LP Pair Token
 /// @author Frax Finance: https://github.com/FraxFinance
-contract FraxswapPair is IUniswapV2PairPartialV5, FraxswapERC20 {
+contract FraxswapPair is IFraxswapPair, FraxswapERC20 {
     using UQ112x112 for uint224;
     using LongTermOrdersLib for LongTermOrdersLib.LongTermOrders;
     using LongTermOrdersLib for LongTermOrdersLib.ExecuteVirtualOrdersResult;
@@ -58,7 +58,7 @@ contract FraxswapPair is IUniswapV2PairPartialV5, FraxswapERC20 {
 
     ///@notice Throws if called by any account other than the owner.
     modifier onlyOwnerOrFactory() {
-        require(factory == msg.sender || IUniswapV2FactoryV5(factory).feeToSetter() == msg.sender); // NOT OWNER OR FACTORY
+        require(factory == msg.sender || IFraxswapFactory(factory).feeToSetter() == msg.sender); // NOT OWNER OR FACTORY
         _;
     }
 
@@ -306,7 +306,7 @@ contract FraxswapPair is IUniswapV2PairPartialV5, FraxswapERC20 {
 
     // if fee is on, mint liquidity equivalent to 1/6th of the growth in sqrt(k)
     function _mintFee(uint112 _reserve0, uint112 _reserve1) private returns (bool feeOn) {
-        address feeTo = IUniswapV2FactoryV5(factory).feeTo();
+        address feeTo = IFraxswapFactory(factory).feeTo();
         feeOn = feeTo != address(0);
         uint256 _kLast = kLast; // gas savings
         if (feeOn) {
@@ -394,7 +394,7 @@ contract FraxswapPair is IUniswapV2PairPartialV5, FraxswapERC20 {
             if (!(to != _token0 && to != _token1)) revert InvalidToToken(); // INVALID_TO
             if (amount0Out > 0) _safeTransfer(_token0, to, amount0Out); // optimistically transfer tokens
             if (amount1Out > 0) _safeTransfer(_token1, to, amount1Out); // optimistically transfer tokens
-            if (data.length > 0) IUniswapV2CalleeV5(to).uniswapV2Call(msg.sender, amount0Out, amount1Out, data);
+            if (data.length > 0) IUniswapV2Callee(to).uniswapV2Call(msg.sender, amount0Out, amount1Out, data);
             balance0 = IERC20V5(_token0).balanceOf(address(this)) - twammReserve0;
             balance1 = IERC20V5(_token1).balanceOf(address(this)) - twammReserve1;
         }
@@ -711,7 +711,7 @@ contract FraxswapPair is IUniswapV2PairPartialV5, FraxswapERC20 {
     ///@notice Pauses the execution of existing twamm orders and the creation of new twamm orders
     // Only callable once by anyone once the pause is toggled on the factory
     function togglePauseNewSwaps() external override {
-        require(!newSwapsPaused && IUniswapV2FactoryV5(factory).globalPause()); // globalPause is enabled
+        require(!newSwapsPaused && IFraxswapFactory(factory).globalPause()); // globalPause is enabled
         // Pause new swaps
         newSwapsPaused = true;
     }

@@ -12,12 +12,12 @@ pragma solidity ^0.8.0;
 // ========================== FraxswapFactory =========================
 // ====================================================================
 
-import { IUniswapV2FactoryV5 } from "./interfaces/IUniswapV2FactoryV5.sol";
+import { IFraxswapFactory } from "./interfaces/IFraxswapFactory.sol";
 import { FraxswapPair } from "./FraxswapPair.sol";
 
 /// @notice TWAMM LP Pair Factory
 /// @author Frax Finance: https://github.com/FraxFinance
-contract FraxswapFactory is IUniswapV2FactoryV5 {
+contract FraxswapFactory is IFraxswapFactory {
     address public override feeTo;
     address public override feeToSetter;
     bool public override globalPause;

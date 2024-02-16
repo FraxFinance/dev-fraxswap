@@ -13,16 +13,17 @@ pragma solidity ^0.8.0;
 // ====================================================================
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import "src/contracts/core/interfaces/IUniswapV2FactoryV5.sol";
+import { IUniswapV2Router02 } from "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02";
+
+import "src/contracts/core/interfaces/IFraxswapFactory.sol";
 import "src/contracts/core/interfaces/IFraxswapPair.sol";
 import "src/contracts/libraries/TransferHelper.sol";
 
-import "./interfaces/IUniswapV2Router02V5.sol";
 import "./FraxswapRouterLibrary.sol";
 import "./interfaces/IWETH.sol";
 
 // TWAMM Router
-contract FraxswapRouter is IUniswapV2Router02V5 {
+contract FraxswapRouter is IUniswapV2Router02 {
     address public immutable override factory;
     address public immutable override WETH;
 
@@ -54,8 +55,8 @@ contract FraxswapRouter is IUniswapV2Router02V5 {
         uint256 amountBMin
     ) internal virtual returns (uint256 amountA, uint256 amountB) {
         // create the pair if it doesn't exist yet
-        if (IUniswapV2FactoryV5(factory).getPair(tokenA, tokenB) == address(0)) {
-            IUniswapV2FactoryV5(factory).createPair(tokenA, tokenB);
+        if (IFraxswapFactory(factory).getPair(tokenA, tokenB) == address(0)) {
+            IFraxswapFactory(factory).createPair(tokenA, tokenB);
         }
         (uint256 reserveA, uint256 reserveB, , ) = FraxswapRouterLibrary.getReservesWithTwamm(factory, tokenA, tokenB);
         if (reserveA == 0 && reserveB == 0) {

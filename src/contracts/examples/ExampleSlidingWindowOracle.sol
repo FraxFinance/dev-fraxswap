@@ -1,6 +1,6 @@
 pragma solidity >=0.6.6;
 
-import "src/contracts/core/interfaces/IUniswapV2FactoryV5.sol";
+import "src/contracts/core/interfaces/IFraxswapFactory.sol";
 import "src/contracts/core/interfaces/IFraxswapPair.sol";
 import "src/contracts/libraries/FixedPoint.sol";
 

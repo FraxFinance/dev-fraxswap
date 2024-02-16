@@ -4,8 +4,6 @@ import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Callee.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "src/contracts/periphery/FraxswapRouterLibrary.sol";
-import "src/contracts/periphery/interfaces/V1/IUniswapV1Factory.sol";
-import "src/contracts/periphery/interfaces/V1/IUniswapV1Exchange.sol";
 import "src/contracts/periphery/interfaces/IUniswapV2Router01V5.sol";
 import "src/contracts/periphery/interfaces/IWETH.sol";
 

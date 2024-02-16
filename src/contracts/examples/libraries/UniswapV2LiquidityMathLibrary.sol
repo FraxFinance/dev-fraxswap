@@ -1,11 +1,11 @@
 pragma solidity ^0.8.0;
 
 import "src/contracts/core/interfaces/IFraxswapPair.sol";
-import "src/contracts/core/interfaces/IUniswapV2FactoryV5.sol";
+import "src/contracts/core/interfaces/IFraxswapFactory.sol";
 import "src/contracts/libraries/Babylonian.sol";
 import "src/contracts/libraries/FullMath.sol";
 
-import { FraxswapRouterLibrary } from "src/contracts/periphery/FraxswapRouterLibrary.sol";
+import "src/contracts/periphery/FraxswapRouterLibrary.sol";
 
 // library containing some math for dealing with the liquidity shares of a pair, e.g. computing their exact value
 // in terms of the underlying tokens
@@ -113,7 +113,7 @@ library UniswapV2LiquidityMathLibrary {
     ) internal view returns (uint256 tokenAAmount, uint256 tokenBAmount) {
         (uint256 reservesA, uint256 reservesB) = FraxswapRouterLibrary.getReserves(factory, tokenA, tokenB);
         IFraxswapPair pair = IFraxswapPair(FraxswapRouterLibrary.pairFor(factory, tokenA, tokenB));
-        bool feeOn = IUniswapV2FactoryV5(factory).feeTo() != address(0);
+        bool feeOn = IFraxswapFactory(factory).feeTo() != address(0);
         uint256 kLast = feeOn ? pair.kLast() : 0;
         uint256 totalSupply = pair.totalSupply();
         return computeLiquidityValue(reservesA, reservesB, totalSupply, liquidityAmount, feeOn, kLast);
@@ -129,7 +129,7 @@ library UniswapV2LiquidityMathLibrary {
         uint256 truePriceTokenB,
         uint256 liquidityAmount
     ) internal view returns (uint256 tokenAAmount, uint256 tokenBAmount) {
-        bool feeOn = IUniswapV2FactoryV5(factory).feeTo() != address(0);
+        bool feeOn = IFraxswapFactory(factory).feeTo() != address(0);
         IFraxswapPair pair = IFraxswapPair(FraxswapRouterLibrary.pairFor(factory, tokenA, tokenB));
         uint256 kLast = feeOn ? pair.kLast() : 0;
         uint256 totalSupply = pair.totalSupply();

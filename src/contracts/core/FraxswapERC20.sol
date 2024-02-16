@@ -12,11 +12,11 @@ pragma solidity ^0.8.0;
 // ========================== FraxswapERC20 ===========================
 // ====================================================================
 
-import { IUniswapV2ERC20V5 } from "./interfaces/IUniswapV2ERC20V5.sol";
+import { IUniswapV2ERC20 } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2ERC20.sol";
 
 /// @notice Fraxswap ERC-20
 /// @author Frax Finance (https://github.com/FraxFinance)
-contract FraxswapERC20 is IUniswapV2ERC20V5 {
+contract FraxswapERC20 is IUniswapV2ERC20 {
     string public constant override name = "Fraxswap V2";
     string public constant override symbol = "FS-V2";
     uint8 public constant override decimals = 18;

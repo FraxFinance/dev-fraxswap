@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.0;
 
-import { IUniswapV2PairV5 } from "./IUniswapV2PairV5.sol";
+import { IUniswapV2Pair } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 
 /// @dev Fraxswap LP Pair Interface
-interface IFraxswapPair is IUniswapV2PairV5 {
+interface IFraxswapPair is IUniswapV2Pair {
     // TWAMM
 
     event LongTermSwap0To1(address indexed addr, uint256 orderId, uint256 amount0In, uint256 numberOfTimeIntervals);
