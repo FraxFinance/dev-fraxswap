@@ -2,10 +2,10 @@ pragma solidity ^0.8.0;
 
 import "src/contracts/core/interfaces/IFraxswapPair.sol";
 import "src/contracts/core/interfaces/IFraxswapFactory.sol";
-import "src/contracts/libraries/Babylonian.sol";
-import "src/contracts/libraries/FullMath.sol";
 
 import "src/contracts/periphery/FraxswapRouterLibrary.sol";
+import "./FullMath.sol";
+import "./Babylonian.sol";
 
 // library containing some math for dealing with the liquidity shares of a pair, e.g. computing their exact value
 // in terms of the underlying tokens

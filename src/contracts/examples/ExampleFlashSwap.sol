@@ -4,7 +4,7 @@ import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Callee.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "src/contracts/periphery/FraxswapRouterLibrary.sol";
-import "src/contracts/periphery/interfaces/IUniswapV2Router01V5.sol";
+import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
 import "src/contracts/periphery/interfaces/IWETH.sol";
 
 interface IUniswapV1Factory {
@@ -27,7 +27,7 @@ contract ExampleFlashSwap is IUniswapV2Callee {
     constructor(address _factory, address _factoryV1, address router) {
         factoryV1 = IUniswapV1Factory(_factoryV1);
         factory = _factory;
-        WETH = IWETH(IUniswapV2Router01V5(router).WETH());
+        WETH = IWETH(IUniswapV2Router01(router).WETH());
     }
 
     // needs to accept ETH from any V1 exchange and WETH. ideally this could be enforced, as in the router,

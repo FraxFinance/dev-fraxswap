@@ -3,12 +3,11 @@ pragma solidity >=0.6.6;
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "src/contracts/core/interfaces/IFraxswapPair.sol";
-import "src/contracts/libraries/Babylonian.sol";
+import "./libraries/Babylonian.sol";
 import "src/contracts/libraries/TransferHelper.sol";
 
 import "./libraries/UniswapV2LiquidityMathLibrary.sol";
-import "src/contracts/periphery/interfaces/IUniswapV2Router01V5.sol";
-import "src/contracts/libraries/SafeMath.sol";
+import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
 import "src/contracts/periphery/FraxswapRouterLibrary.sol";
 
 contract ExampleSwapToPrice {

@@ -1,7 +1,7 @@
 pragma solidity >=0.6.6;
 
 import "./libraries/UniswapV2LiquidityMathLibrary.sol";
-import "src/contracts/libraries/SafeMath.sol";
+import "./libraries/SafeMath.sol";
 
 contract ExampleComputeLiquidityValue {
     using SafeMath for uint256;

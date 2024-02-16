@@ -2,11 +2,11 @@ pragma solidity >=0.6.6;
 
 import "src/contracts/core/interfaces/IFraxswapFactory.sol";
 import "src/contracts/core/interfaces/IFraxswapPair.sol";
-import "src/contracts/libraries/FixedPoint.sol";
 
-import "src/contracts/libraries/SafeMath.sol";
 import "src/contracts/periphery/FraxswapRouterLibrary.sol";
+import "./libraries/FixedPoint.sol";
 import "./libraries/UniswapV2OracleLibrary.sol";
+import "./libraries/SafeMath.sol";
 
 // sliding window oracle that uses observations collected over a window to provide moving price averages in the past
 // `windowSize` with a precision of `windowSize / granularity`

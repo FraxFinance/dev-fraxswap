@@ -2,9 +2,9 @@ pragma solidity >=0.6.6;
 
 import "src/contracts/core/interfaces/IFraxswapFactory.sol";
 import "src/contracts/core/interfaces/IFraxswapPair.sol";
-import "src/contracts/libraries/FixedPoint.sol";
 import "src/contracts/periphery/FraxswapRouterLibrary.sol";
 
+import "./libraries/FixedPoint.sol";
 import "./libraries/UniswapV2OracleLibrary.sol";
 
 // fixed window oracle that recomputes the average price for the entire period once every period
