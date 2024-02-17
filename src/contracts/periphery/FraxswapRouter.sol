@@ -373,12 +373,11 @@ contract FraxswapRouter {
             uint256 amountOutput;
             {
                 // scope to avoid stack too deep errors
-                (
-                    uint256 reserveInput,
-                    uint256 reserveOutput,
-                    uint256 twammReserveInput,
-                    uint256 twammReserveOutput
-                ) = FraxswapRouterLibrary.getReservesWithTwamm(factory, input, output);
+                (uint256 reserveInput, , uint256 twammReserveInput, ) = FraxswapRouterLibrary.getReservesWithTwamm(
+                    factory,
+                    input,
+                    output
+                );
                 amountInput = IERC20(input).balanceOf(address(pair)) - reserveInput - twammReserveInput;
                 amountOutput = pair.getAmountOut(amountInput, input);
             }
@@ -455,19 +454,11 @@ contract FraxswapRouter {
         return FraxswapRouterLibrary.quote(amountA, reserveA, reserveB);
     }
 
-    function getAmountOut(
-        uint256 amountIn,
-        uint256 reserveIn,
-        uint256 reserveOut
-    ) public pure virtual returns (uint256 amountOut) {
+    function getAmountOut(uint256, uint256, uint256) public pure virtual returns (uint256) {
         revert("Deprecated: Use getAmountsOut"); // depends on the fee of the pool
     }
 
-    function getAmountIn(
-        uint256 amountOut,
-        uint256 reserveIn,
-        uint256 reserveOut
-    ) public pure virtual returns (uint256 amountIn) {
+    function getAmountIn(uint256, uint256, uint256) public pure virtual returns (uint256) {
         revert("Deprecated: Use getAmountsIn"); // depends on the fee of the pool
     }
 
