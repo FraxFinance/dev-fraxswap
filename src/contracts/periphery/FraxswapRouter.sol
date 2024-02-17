@@ -373,13 +373,11 @@ contract FraxswapRouter {
             uint256 amountOutput;
             {
                 // scope to avoid stack too deep errors
-                (
-                    uint256 reserveInput, // uint256 reserveOutput
-                    ,
-                    uint256 twammReserveInput,
-
-                ) = // uint256 twammReserveOutput
-                    FraxswapRouterLibrary.getReservesWithTwamm(factory, input, output);
+                (uint256 reserveInput, , uint256 twammReserveInput, ) = FraxswapRouterLibrary.getReservesWithTwamm(
+                    factory,
+                    input,
+                    output
+                );
                 amountInput = IERC20(input).balanceOf(address(pair)) - reserveInput - twammReserveInput;
                 amountOutput = pair.getAmountOut(amountInput, input);
             }
