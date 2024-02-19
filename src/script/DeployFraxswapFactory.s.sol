@@ -7,26 +7,24 @@ import { FraxswapFactory } from "src/contracts/core/FraxswapFactory.sol";
 import "../Constants.sol" as Constants;
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
-function deployFraxswapFactory(
-    address _feeToSetter
-) returns (FraxswapFactory iFraxswapFactory, address fraxswapFactory) {
-    iFraxswapFactory = new FraxswapFactory({ _feeToSetter: _feeToSetter });
+function deployFraxswapFactory(address _owner) returns (FraxswapFactory iFraxswapFactory, address fraxswapFactory) {
+    iFraxswapFactory = new FraxswapFactory({ _owner: _owner });
     fraxswapFactory = address(iFraxswapFactory);
 }
 
 contract DeployFraxswapFactory is FraxtalScript {
     function run() public broadcaster {
-        address feeToSetter;
+        address owner;
         if (Strings.equal(network, Constants.FraxtalDeployment.DEVNET)) {
-            feeToSetter = Constants.FraxtalL2Devnet.FEE_TO_SETTER;
+            owner = Constants.FraxtalL2Devnet.COMPTROLLER;
         } else if (Strings.equal(network, Constants.FraxtalDeployment.TESTNET)) {
-            feeToSetter = Constants.FraxtalTestnet.FEE_TO_SETTER;
+            owner = Constants.FraxtalTestnet.COMPTROLLER;
         } else if (Strings.equal(network, Constants.FraxtalDeployment.MAINNET)) {
-            feeToSetter = Constants.FraxtalMainnet.FEE_TO_SETTER;
+            owner = Constants.FraxtalMainnet.COMPTROLLER;
         }
-        require(feeToSetter != address(0), "FraxswapFactory not set in network");
+        require(owner != address(0), "FraxswapFactory not set in network");
 
-        (, address fraxswapFactory) = deployFraxswapFactory({ _feeToSetter: feeToSetter });
+        (, address fraxswapFactory) = deployFraxswapFactory({ _owner: owner });
         console.log("FraxswapFactory deployed to: ", fraxswapFactory);
     }
 }

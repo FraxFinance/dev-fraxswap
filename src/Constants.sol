@@ -265,8 +265,6 @@ library FraxtalL2Devnet {
     address internal constant L2_STANDARD_BRIDGE = 0x4200000000000000000000000000000000000010;
     address internal constant COMPTROLLER = 0x8b1E899ec5d51387a41Ee68261149F7d3Dfd7160;
     address internal constant FRAXSWAP_FACTORY = 0x0000000000000000000000000000000000000000;
-    address internal constant FEE_TO_SETTER = 0x8b1E899ec5d51387a41Ee68261149F7d3Dfd7160;
-    address internal constant FEE_TO = 0x8b1E899ec5d51387a41Ee68261149F7d3Dfd7160;
 }
 
 library FraxtalTestnet {
@@ -275,8 +273,6 @@ library FraxtalTestnet {
     address internal constant L2_STANDARD_BRIDGE = 0x4200000000000000000000000000000000000010;
     address internal constant COMPTROLLER = 0x88699c59E413e8A47117820D15d8D33b09B21edD;
     address internal constant FRAXSWAP_FACTORY = 0x0000000000000000000000000000000000000000;
-    address internal constant FEE_TO_SETTER = 0x88699c59E413e8A47117820D15d8D33b09B21edD;
-    address internal constant FEE_TO = 0x88699c59E413e8A47117820D15d8D33b09B21edD;
 }
 
 library FraxtalMainnet {
@@ -285,8 +281,6 @@ library FraxtalMainnet {
     address internal constant L2_STANDARD_BRIDGE = 0x4200000000000000000000000000000000000010;
     address internal constant COMPTROLLER = 0xC4EB45d80DC1F079045E75D5d55de8eD1c1090E6;
     address internal constant FRAXSWAP_FACTORY = 0x0000000000000000000000000000000000000000;
-    address internal constant FEE_TO_SETTER = 0xC4EB45d80DC1F079045E75D5d55de8eD1c1090E6;
-    address internal constant FEE_TO = 0xC4EB45d80DC1F079045E75D5d55de8eD1c1090E6;
 }
 
 library FraxtalProxies {
