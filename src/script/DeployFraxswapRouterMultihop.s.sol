@@ -11,18 +11,18 @@ function deployFraxswapRouterMultihop(
     address _WETH9,
     address _FRAX,
     bool _CHECK_AMOUNTOUT_IN_ROUTER
-) returns (address) {
-    FraxswapRouterMultihop fraxswapRouterMultihop = new FraxswapRouterMultihop({
+) returns (FraxswapRouterMultihop iFraxswapRouterMultihop, address fraxswapRouterMultihop) {
+    iFraxswapRouterMultihop = new FraxswapRouterMultihop({
         _WETH9: IWETH(_WETH9),
         _FRAX: _FRAX,
         _CHECK_AMOUNTOUT_IN_ROUTER: _CHECK_AMOUNTOUT_IN_ROUTER
     });
-    return address(fraxswapRouterMultihop);
+    fraxswapRouterMultihop = address(iFraxswapRouterMultihop);
 }
 
 contract DeployFraxswapRouterMultihop is FraxtalScript {
     function run() public broadcaster {
-        address fraxswapRouterMultihop = deployFraxswapRouterMultihop({
+        (, address fraxswapRouterMultihop) = deployFraxswapRouterMultihop({
             _WETH9: Constants.FraxtalProxies.WFRXETH_PROXY,
             _FRAX: Constants.FraxtalProxies.FRAX_PROXY,
             _CHECK_AMOUNTOUT_IN_ROUTER: true
