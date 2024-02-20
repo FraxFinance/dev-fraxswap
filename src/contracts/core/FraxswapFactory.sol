@@ -30,8 +30,9 @@ contract FraxswapFactory {
     error ZeroAddress();
     error PairExists();
 
-    constructor(address _feeToSetter) {
-        feeToSetter = _feeToSetter;
+    constructor(address _owner) {
+        feeToSetter = _owner;
+        feeTo = _owner;
     }
 
     ///@notice Throws if called by any account other than the feeToSetter.
