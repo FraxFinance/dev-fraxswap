@@ -272,7 +272,9 @@ library FraxtalTestnet {
     address internal constant PROXY_ADMIN = 0xfC00000000000000000000000000000000000007;
     address internal constant L2_STANDARD_BRIDGE = 0x4200000000000000000000000000000000000010;
     address internal constant COMPTROLLER = 0x012fcFb933b9a4335B1BCC836e6a9a475146beBd;
-    address internal constant FRAXSWAP_FACTORY = 0x0000000000000000000000000000000000000000;
+    address internal constant FRAXSWAP_FACTORY = 0xbc679bdd1bA59654bD50DEB03fd80dC97c713fF2;
+    address internal constant FRAXSWAP_ROUTER = 0x938d99A81814f66b01010d19DDce92A633441699;
+    address internal constant FRAXSWAP_ROUTER_MULTIHOP = 0x509728dC748586214Fa30cEF61359f136523F24d;
 }
 
 library FraxtalMainnet {
@@ -283,6 +285,8 @@ library FraxtalMainnet {
     address internal constant FRAXSWAP_FACTORY = 0x7a07D606c87b7251c2953A30Fa445d8c5F856C7A;
     address internal constant FRAXSWAP_ROUTER = 0x195843F052052c3692dAcAB049e0Bf5715a24755;
     address internal constant FRAXSWAP_ROUTER_MULTIHOP = 0x31D982ebd82Ad900358984bd049207A4c2468640;
+    address internal constant OPTIMISM_MINTABLE_PERMIT_ERC20_FACTORY_IMPLEMENTATION =
+        0x111ddab65Af5fF96b674400246699ED40F550De1;
 }
 
 library FraxtalProxies {
