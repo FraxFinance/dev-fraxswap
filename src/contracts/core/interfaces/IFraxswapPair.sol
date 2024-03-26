@@ -12,6 +12,8 @@ interface IFraxswapPair is IUniswapV2Pair {
         uint256 price1CumulativeLast;
     }
 
+    function TWAPObservationHistory(uint256 index) external view returns (TWAPObservation memory);
+
     event LongTermSwap0To1(address indexed addr, uint256 orderId, uint256 amount0In, uint256 numberOfTimeIntervals);
     event LongTermSwap1To0(address indexed addr, uint256 orderId, uint256 amount1In, uint256 numberOfTimeIntervals);
     event CancelLongTermOrder(
