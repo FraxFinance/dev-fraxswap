@@ -6,6 +6,11 @@ import { IUniswapV2Pair } from "@uniswap/v2-core/contracts/interfaces/IUniswapV2
 /// @dev Fraxswap LP Pair Interface
 interface IFraxswapPair is IUniswapV2Pair {
     // TWAMM
+    struct TWAPObservation {
+        uint256 timestamp;
+        uint256 price0CumulativeLast;
+        uint256 price1CumulativeLast;
+    }
 
     event LongTermSwap0To1(address indexed addr, uint256 orderId, uint256 amount0In, uint256 numberOfTimeIntervals);
     event LongTermSwap1To0(address indexed addr, uint256 orderId, uint256 amount1In, uint256 numberOfTimeIntervals);
