@@ -31,9 +31,9 @@ contract FraxswapRouterMultihop is ReentrancyGuard {
     using SafeCast for uint256;
     using SafeCast for int256;
 
-    IWETH WETH9;
-    address FRAX;
-    bool public CHECK_AMOUNTOUT_IN_ROUTER;
+    IWETH public immutable WETH9;
+    address public immutable FRAX;
+    bool public immutable CHECK_AMOUNTOUT_IN_ROUTER;
 
     constructor(IWETH _WETH9, address _FRAX, bool _CHECK_AMOUNTOUT_IN_ROUTER) {
         WETH9 = _WETH9;
@@ -98,8 +98,9 @@ contract FraxswapRouterMultihop is ReentrancyGuard {
         }
         bool outputETH = params.tokenOut == address(0); // save gas
         uint256 initialBalance;
-        if (!CHECK_AMOUNTOUT_IN_ROUTER)
+        if (!CHECK_AMOUNTOUT_IN_ROUTER) {
             initialBalance = outputETH ? params.recipient.balance : IERC20(params.tokenOut).balanceOf(params.recipient);
+        }
         for (uint256 i; i < route.nextHops.length; ++i) {
             FraxswapRoute memory nextRoute = i == 0 ? firstRoute : abi.decode(route.nextHops[i], (FraxswapRoute));
             executeAllHops(route, nextRoute, params.recipient);
@@ -121,10 +122,11 @@ contract FraxswapRouterMultihop is ReentrancyGuard {
                 TransferHelper.safeTransfer(params.tokenOut, params.recipient, amountOut);
             }
         }
-        if (!CHECK_AMOUNTOUT_IN_ROUTER)
+        if (!CHECK_AMOUNTOUT_IN_ROUTER) {
             amountOut = outputETH
                 ? params.recipient.balance
                 : IERC20(params.tokenOut).balanceOf(params.recipient) - initialBalance;
+        }
 
         // Check output amounts (IMPORTANT CHECK)
         require(amountOut >= params.amountOutMinimum, "FSR:IO"); // Insufficient output
