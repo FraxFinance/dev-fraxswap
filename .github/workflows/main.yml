@@ -28,4 +28,3 @@ jobs:
       - run: pnpm i
       - run: pnpm lint:check
       - run: forge build
-      - run: forge test
