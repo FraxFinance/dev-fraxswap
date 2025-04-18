@@ -11,8 +11,12 @@ function deployFraxswapRouter(
     address _factory,
     address _WETH
 ) returns (FraxswapRouter iFraxswapRouter, address fraxswapRouter) {
-    iFraxswapRouter = new FraxswapRouter({ _factory: _factory, _WETH: _WETH });
+    iFraxswapRouter = new FraxswapRouter{ salt: bytes32(uint256(85_070_591_730_234_615_865_843_651_858_063_175_148)) }({
+        _factory: _factory,
+        _WETH: _WETH
+    });
     fraxswapRouter = address(iFraxswapRouter);
+    console.log("Router Deployed to: ", fraxswapRouter);
 }
 
 contract DeployFraxswapRouter is FraxtalScript {
@@ -23,10 +27,14 @@ contract DeployFraxswapRouter is FraxtalScript {
         } else if (Strings.equal(network, Constants.FraxtalDeployment.TESTNET)) {
             fraxswapFactory = Constants.FraxtalTestnet.FRAXSWAP_FACTORY;
         } else if (Strings.equal(network, Constants.FraxtalDeployment.MAINNET)) {
-            fraxswapFactory = Constants.FraxtalMainnet.FRAXSWAP_FACTORY;
+            // fraxswapFactory = Constants.FraxtalMainnet.FRAXSWAP_FACTORY;
+            fraxswapFactory = 0xE30521fe7f3bEB6Ad556887b50739d6C7CA667E6;
         }
         require(fraxswapFactory != address(0), "FraxswapFactory not set in network");
 
-        deployFraxswapRouter({ _factory: fraxswapFactory, _WETH: Constants.FraxtalProxies.WFRXETH_PROXY });
+        // console.logBytes(type(FraxswapRouter).creationCode);
+        // console.logBytes(abi.encode(fraxswapFactory, Constants.FraxtalProxies.FXS_PROXY));
+
+        deployFraxswapRouter({ _factory: fraxswapFactory, _WETH: Constants.FraxtalProxies.FXS_PROXY });
     }
 }
