@@ -17,7 +17,7 @@ import { IFraxswapPair } from "src/contracts/core/interfaces/IFraxswapPair.sol";
 /// @notice Fraxswap Router Library Functions
 /// @author Frax Finance: https://github.com/FraxFinance
 library FraxswapRouterLibrary {
-    bytes public constant INIT_CODE_HASH = hex"46dd19aa7d926c9d41df47574e3c09b978a1572918da0e3da18ad785c1621d48"; // init code / init hash
+    bytes public constant INIT_CODE_HASH = hex"676b4c9b92980c4e7823b43031b17d7299896d1cd7d147104ad8e21692123fa1"; // init code / init hash
 
     // returns sorted token addresses, used to handle return values from pairs sorted in this order
     function sortTokens(address tokenA, address tokenB) internal pure returns (address token0, address token1) {
